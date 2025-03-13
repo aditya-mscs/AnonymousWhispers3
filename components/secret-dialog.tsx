@@ -146,6 +146,11 @@ export function SecretDialog({
     return "bg-gray-300 dark:bg-gray-600"
   }
 
+  // Sort comments by time (newest first)
+  const sortedComments = secret.comments
+    ? [...secret.comments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    : []
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -201,9 +206,9 @@ export function SecretDialog({
 
           <div className="space-y-2">
             <h4 className="text-sm font-medium">Comments</h4>
-            {secret.comments && secret.comments.length > 0 ? (
+            {sortedComments && sortedComments.length > 0 ? (
               <div className="space-y-2 max-h-40 overflow-y-auto">
-                {secret.comments.slice(0, 5).map((comment, index) => (
+                {sortedComments.slice(0, 5).map((comment, index) => (
                   <div key={index} className="p-2 bg-muted/30 rounded-md">
                     <div className="flex justify-between">
                       <span className="text-xs font-medium">{comment.username}</span>
@@ -214,9 +219,9 @@ export function SecretDialog({
                     <p className="text-sm mt-1">{comment.content}</p>
                   </div>
                 ))}
-                {secret.comments.length > 5 && (
+                {sortedComments.length > 5 && (
                   <Button variant="link" size="sm" onClick={goToFullPage}>
-                    View all {secret.comments.length} comments
+                    View all {sortedComments.length} comments
                   </Button>
                 )}
               </div>

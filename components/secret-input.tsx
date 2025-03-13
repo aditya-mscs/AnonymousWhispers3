@@ -2,24 +2,31 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Mic, Send, MicOff } from "lucide-react"
+import { Mic, Send, MicOff, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Slider } from "@/components/ui/slider"
 import { useToast } from "@/hooks/use-toast"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useAppDispatch } from "@/redux/hooks"
 import { addSecret } from "@/redux/features/secrets/secretsSlice"
 import { getUsernameFromStorage, saveUsernameToStorage } from "@/lib/storage"
 import { secretsApi } from "@/lib/api-client"
+import { generateSubmissionToken } from "@/lib/submission-token"
 
 // Define SpeechRecognition and SpeechRecognitionEvent types
 declare global {
   interface Window {
     SpeechRecognition: SpeechRecognition
     webkitSpeechRecognition: SpeechRecognition
+    SpeechRecognitionEvent: any
+    SpeechRecognitionErrorEvent: any
   }
 }
+
+// Fix: Declare SpeechRecognition
+const SpeechRecognition = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition)
 
 export default function SecretInput() {
   const [content, setContent] = useState("")
@@ -29,6 +36,14 @@ export default function SecretInput() {
   const { toast } = useToast()
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const queryClient = useQueryClient()
+
+  // CAPTCHA state
+  const [submissionToken, setSubmissionToken] = useState<string>("")
+  const [showCaptcha, setShowCaptcha] = useState<boolean>(false)
+  const [isFirstSubmission, setIsFirstSubmission] = useState(true)
+  const [sliderValue, setSliderValue] = useState<number[]>([0])
+  const targetValue = useRef(Math.floor(Math.random() * 81) + 10) // Random value between 10-90
 
   // Check if SpeechRecognition is available
   const isSpeechRecognitionAvailable =
@@ -36,23 +51,39 @@ export default function SecretInput() {
 
   // Create mutation for submitting secrets
   const mutation = useMutation({
-    mutationFn: (data: { content: string; darkness: number; username: string }) => {
+    mutationFn: (data: { content: string; darkness: number; username: string; submissionToken: string }) => {
       return secretsApi.createSecret(data)
     },
     onSuccess: (data) => {
       setContent("")
       setIsSubmitting(false)
 
+      // Reset CAPTCHA state for next submission
+      setShowCaptcha(false)
+      setSliderValue([0])
+
+      // Mark that the user has submitted before (for future submissions)
+      localStorage.setItem("has_submitted_secret", "true")
+      setIsFirstSubmission(false)
+
       // Add to local state
       dispatch(addSecret(data))
+
+      // Invalidate the secrets query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ["secrets"] })
+
+      // Select the "recent" tab by triggering a click on it
+      setTimeout(() => {
+        const recentTabElement = document.querySelector('[value="recent"]') as HTMLElement
+        if (recentTabElement) {
+          recentTabElement.click()
+        }
+      }, 100)
 
       toast({
         title: "Secret shared successfully",
         description: "Your secret has been anonymously shared.",
       })
-
-      // Navigate to the secret page
-      router.push(`/secret/${data.id}`)
     },
     onError: (error: Error) => {
       setIsSubmitting(false)
@@ -64,43 +95,30 @@ export default function SecretInput() {
     },
   })
 
-  // Initialize speech recognition
+  // Generate a new CAPTCHA
+  const generateCaptcha = () => {
+    // Generate a new random target value
+    targetValue.current = Math.floor(Math.random() * 81) + 10 // Random value between 10-90
+    setSliderValue([0])
+    // Generate a new submission token
+    setSubmissionToken(generateSubmissionToken())
+  }
+
+  // Initialize the CAPTCHA
   useEffect(() => {
-    if (isSpeechRecognitionAvailable) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-      recognitionRef.current = new SpeechRecognition()
+    generateCaptcha()
+  }, [])
 
-      if (recognitionRef.current) {
-        recognitionRef.current.continuous = true
-        recognitionRef.current.interimResults = true
-
-        recognitionRef.current.onresult = (event: any) => {
-          const transcript = Array.from(event.results)
-            .map((result) => result[0])
-            .map((result) => result.transcript)
-            .join("")
-
-          setContent((prev) => prev + " " + transcript)
-        }
-
-        recognitionRef.current.onerror = (event: any) => {
-          console.error("Speech recognition error", event.error)
-          setIsRecording(false)
-          toast({
-            title: "Voice recognition error",
-            description: `Error: ${event.error}`,
-            variant: "destructive",
-          })
-        }
-      }
+  // Check if this is the user's first submission
+  useEffect(() => {
+    // Check localStorage to see if the user has submitted before
+    const hasSubmittedBefore = localStorage.getItem("has_submitted_secret")
+    if (hasSubmittedBefore === "true") {
+      setIsFirstSubmission(false)
+    } else {
+      setIsFirstSubmission(true)
     }
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop()
-      }
-    }
-  }, [isSpeechRecognitionAvailable, toast])
+  }, [])
 
   const toggleRecording = () => {
     if (!isSpeechRecognitionAvailable) {
@@ -116,11 +134,52 @@ export default function SecretInput() {
       recognitionRef.current?.stop()
       setIsRecording(false)
     } else {
-      recognitionRef.current?.start()
-      setIsRecording(true)
+      // Use SpeechRecognition or webkitSpeechRecognition based on availability
+      // const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition()
+        recognitionRef.current.continuous = false
+        recognitionRef.current.lang = "en-US"
+
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = Array.from(event.results)
+            .map((result) => result[0].transcript)
+            .join("")
+          setContent((prevContent) => prevContent + transcript)
+        }
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.error("Speech recognition error:", event.error)
+          toast({
+            title: "Speech recognition error",
+            description: `Error: ${event.error}`,
+            variant: "destructive",
+          })
+          setIsRecording(false)
+        }
+
+        recognitionRef.current.onend = () => {
+          setIsRecording(false)
+        }
+
+        recognitionRef.current.start()
+        setIsRecording(true)
+      } else {
+        toast({
+          title: "Speech recognition not available",
+          description: "Your browser doesn't support voice recognition.",
+          variant: "destructive",
+        })
+      }
     }
   }
 
+  // Handle slider change
+  const handleSliderChange = (value: number[]) => {
+    setSliderValue(value)
+  }
+
+  // Update the handleSubmit function
   const handleSubmit = async () => {
     // Stop recording if active
     if (isRecording && recognitionRef.current) {
@@ -149,6 +208,52 @@ export default function SecretInput() {
       return
     }
 
+    // Skip CAPTCHA for first-time users
+    if (isFirstSubmission) {
+      setIsSubmitting(true)
+
+      // Get or generate username
+      let username = getUsernameFromStorage()
+      if (!username) {
+        username = generateRandomUsername()
+        saveUsernameToStorage(username)
+      }
+
+      // Mark that the user has submitted before
+      localStorage.setItem("has_submitted_secret", "true")
+
+      // Submit the secret with default darkness level of 5
+      mutation.mutate({
+        content,
+        darkness: 5,
+        username,
+        submissionToken: generateSubmissionToken(),
+      })
+
+      return
+    }
+
+    // If not showing CAPTCHA yet, show it now
+    if (!showCaptcha) {
+      setShowCaptcha(true)
+      return
+    }
+
+    // Validate CAPTCHA - check if slider value is close to target value
+    const sliderValueInt = sliderValue[0]
+    const targetValueInt = targetValue.current
+
+    // Allow a small margin of error (±2)
+    if (Math.abs(sliderValueInt - targetValueInt) > 2) {
+      toast({
+        title: "CAPTCHA verification failed",
+        description: "Please drag the slider to the target value.",
+        variant: "destructive",
+      })
+      generateCaptcha() // Generate a new CAPTCHA
+      return
+    }
+
     setIsSubmitting(true)
 
     // Get or generate username
@@ -158,8 +263,13 @@ export default function SecretInput() {
       saveUsernameToStorage(username)
     }
 
-    // Submit the secret with default darkness level of 5
-    mutation.mutate({ content, darkness: 5, username })
+    // Submit the secret with default darkness level of 5 and the submission token
+    mutation.mutate({
+      content,
+      darkness: 5,
+      username,
+      submissionToken,
+    })
   }
 
   return (
@@ -172,6 +282,42 @@ export default function SecretInput() {
           onChange={(e) => setContent(e.target.value)}
           disabled={isSubmitting}
         />
+
+        {/* Show CAPTCHA above the buttons, but only if not first submission and showCaptcha is true */}
+        {!isFirstSubmission && showCaptcha && (
+          <div className="w-full border p-4 rounded-md mt-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-medium">Verify you're human:</div>
+              <Shield className="h-4 w-4 text-primary" />
+            </div>
+
+            <div className="space-y-4">
+              <div className="text-sm">
+                Drag the slider to <span className="font-bold">{targetValue.current}</span> to verify
+              </div>
+
+              <div className="space-y-2">
+                <Slider value={sliderValue} min={0} max={100} step={1} onValueChange={handleSliderChange} />
+
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>0</span>
+                  <span>Current: {sliderValue[0]}</span>
+                  <span>100</span>
+                </div>
+
+                {/* Progress bar showing how close the user is to the target */}
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-200 ${
+                      Math.abs(sliderValue[0] - targetValue.current) <= 2 ? "bg-green-500" : "bg-primary/50"
+                    }`}
+                    style={{ width: `${sliderValue[0]}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button
@@ -186,7 +332,7 @@ export default function SecretInput() {
         </Button>
         <Button onClick={handleSubmit} disabled={content.trim().length < 10 || isSubmitting}>
           <Send className="h-4 w-4 mr-2" />
-          Share Secret
+          {!isFirstSubmission && showCaptcha ? "Confirm & Share" : "Share Secret"}
         </Button>
       </CardFooter>
     </Card>

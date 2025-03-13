@@ -1,7 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { saveSecret, getSecrets, hashIp } from "@/lib/db"
+import { saveSecret, getSecrets, hashIp, getSubmissionCountByIp } from "@/lib/db"
 import { generateRandomUsername } from "@/lib/utils"
+
+// Import the rate limiting utility at the top of the file
+import { rateLimit } from "@/lib/rate-limit"
+// Add this import at the top
+import { validateSubmissionToken } from "@/lib/submission-token"
 
 // Schema for validating secret input
 const secretSchema = z.object({
@@ -10,8 +15,21 @@ const secretSchema = z.object({
   username: z.string().optional(),
 })
 
+// Update the POST function to include rate limiting
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting - 5 submissions per IP per 10 minutes
+    const rateLimitResult = rateLimit(request, {
+      limit: 5,
+      windowMs: 10 * 60 * 1000, // 10 minutes
+    })
+
+    // If rate limit response is returned, the limit was exceeded
+    if (rateLimitResult instanceof NextResponse) {
+      return rateLimitResult
+    }
+
+    // Continue with the existing code...
     const body = await request.json()
 
     // Validate input
@@ -26,6 +44,29 @@ export async function POST(request: NextRequest) {
     if (urlRegex.test(content)) {
       return NextResponse.json({ error: "URLs are not allowed in secrets" }, { status: 400 })
     }
+
+    // Validate submission token
+    if (!body.submissionToken || !validateSubmissionToken(body.submissionToken)) {
+      // Check if this IP has submitted before
+      const ip = request.headers.get("x-forwarded-for") || "unknown"
+      const ipHash = hashIp(ip)
+
+      // Get submission count for this IP
+      const submissionCount = await getSubmissionCountByIp(ipHash)
+
+      // If this is not their first submission, require a valid token
+      if (submissionCount > 0) {
+        return NextResponse.json({ error: "Invalid or expired submission token" }, { status: 400 })
+      }
+      // For first-time users, we'll allow the submission without a token
+    }
+
+    // Remove the duplicate check for submission token
+    // Delete or comment out this block:
+    // Verify submission token if provided
+    // if (!body.submissionToken) {
+    //   return NextResponse.json({ error: "Missing submission token" }, { status: 400 })
+    // }
 
     // Get IP address for user identification (but keep anonymous)
     const ip = request.headers.get("x-forwarded-for") || "unknown"
@@ -43,7 +84,13 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
     })
 
-    return NextResponse.json({ success: true, secret }, { status: 201 })
+    // Add rate limit headers to the response
+    const response = NextResponse.json({ success: true, secret }, { status: 201 })
+    for (const [key, value] of rateLimitResult.headers.entries()) {
+      response.headers.set(key, value)
+    }
+
+    return response
   } catch (error) {
     console.error("Error creating secret:", error)
     return NextResponse.json(

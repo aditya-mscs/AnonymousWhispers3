@@ -328,3 +328,20 @@ export async function updateSecretInteractions(secretId: string, action: "share"
   }
 }
 
+// Add this function to check how many submissions an IP has made
+export async function getSubmissionCountByIp(ipHash: string): Promise<number> {
+  try {
+    // In a real implementation, you would query your database
+    // to count submissions from this IP hash
+
+    // For now, we'll use a simple in-memory approach for demonstration
+    // In production, you'd want to use your database
+
+    // This is just a placeholder implementation
+    return 0 // Assume first submission for everyone in this demo
+  } catch (error) {
+    console.error("Error checking submission count:", error)
+    return 0 // Default to first submission on error
+  }
+}
+

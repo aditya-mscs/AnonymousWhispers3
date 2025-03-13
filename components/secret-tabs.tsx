@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAppSelector, useAppDispatch } from "@/redux/hooks"
 import { setSecrets } from "@/redux/features/secrets/secretsSlice"
 import SecretCard from "@/components/secret-card"
@@ -15,6 +15,7 @@ export default function SecretTabs() {
   const dispatch = useAppDispatch()
   const localSecrets = useAppSelector((state) => state.secrets.secrets)
   const [useMockData, setUseMockData] = useState(false)
+  const queryClient = useQueryClient()
 
   // Fetch secrets based on active tab
   const { data, isLoading, error } = useQuery({
@@ -55,6 +56,10 @@ export default function SecretTabs() {
   // Handle tab change
   const handleTabChange = (value: string) => {
     setActiveTab(value)
+    // Force a refetch when switching to the "recent" tab to ensure we have the latest data
+    if (value === "recent") {
+      queryClient.invalidateQueries({ queryKey: ["secrets", "recent"] })
+    }
   }
 
   if (error) {

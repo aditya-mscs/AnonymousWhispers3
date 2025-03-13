@@ -84,7 +84,12 @@ export const secretsApi = {
   },
 
   // Create a new secret
-  createSecret: async (secret: { content: string; darkness: number; username?: string }): Promise<Secret> => {
+  createSecret: async (secret: {
+    content: string
+    darkness: number
+    username?: string
+    submissionToken?: string
+  }): Promise<Secret> => {
     const baseUrl = getBaseUrl()
 
     try {

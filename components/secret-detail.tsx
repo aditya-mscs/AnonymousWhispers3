@@ -151,6 +151,11 @@ export function SecretDetail({ secret }: SecretDetailProps) {
     }
   }
 
+  // Sort comments by time (newest first)
+  const sortedComments = secret.comments
+    ? [...secret.comments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    : []
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Card>
@@ -221,9 +226,9 @@ export function SecretDetail({ secret }: SecretDetailProps) {
             </Button>
           </div>
 
-          {secret.comments && secret.comments.length > 0 ? (
+          {sortedComments && sortedComments.length > 0 ? (
             <div className="space-y-4 mt-6">
-              {secret.comments.map((comment, index) => (
+              {sortedComments.map((comment, index) => (
                 <div key={index} className="p-4 bg-muted/30 rounded-md">
                   <div className="flex justify-between">
                     <span className="font-medium">{comment.username}</span>

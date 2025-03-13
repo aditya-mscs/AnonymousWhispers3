@@ -24,7 +24,7 @@ export interface AwsEnvironment {
  */
 export function getAwsEnvironment(): AwsEnvironment {
   // Use typeof check to ensure this works in both server and client environments
-  const env: any = typeof process !== "undefined" && process.env ? process.env : {}
+  const env = typeof process !== "undefined" && process.env ? process.env : {}
 
   // Get region - only use MY_AWS_REGION
   const region = env.MY_AWS_REGION || "us-east-1"
