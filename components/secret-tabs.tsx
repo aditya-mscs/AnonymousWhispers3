@@ -22,23 +22,14 @@ export default function SecretTabs() {
     queryKey: ["secrets", activeTab, useMockData],
     queryFn: async () => {
       try {
-        // First try the real API
-        if (!useMockData) {
-          const data = await secretsApi.getSecrets(activeTab, 12)
-          return data
-        }
+        // Use our API client which handles browser environments safely
+        const data = await secretsApi.getSecrets(activeTab, 12)
+        return data
       } catch (error) {
-        console.error("Error fetching from real API, falling back to mock data:", error)
+        console.error("Error fetching secrets:", error)
         setUseMockData(true)
+        throw error
       }
-
-      // Fall back to mock API if real one fails
-      const response = await fetch(`/api/mock-secrets?type=${activeTab}&limit=12&page=1`)
-      if (!response.ok) {
-        throw new Error("Failed to fetch mock secrets")
-      }
-      const data = await response.json()
-      return data.secrets
     },
     staleTime: 60000, // 1 minute
   })

@@ -1,9 +1,11 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
-import { Share2, ExternalLink } from "lucide-react"
+import { ExternalLink, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Slider } from "@/components/ui/slider"
@@ -13,6 +15,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 import { getUsernameFromStorage } from "@/lib/storage"
 import { getDarknessTextColor } from "@/lib/utils"
+import SecretActionsMenu from "@/components/secret-actions-menu"
 
 interface SecretSlideProps {
   secret: Secret
@@ -23,7 +26,7 @@ interface SecretSlideProps {
   onRatingChangeEnd: (value: number[]) => void
 }
 
-export function SecretSlide({
+export default function SecretSlide({
   secret,
   open,
   onOpenChange,
@@ -103,7 +106,8 @@ export function SecretSlide({
   }
 
   // Handle share button click
-  const handleShare = async () => {
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation()
     try {
       // Create share URL
       const shareUrl = `${window.location.origin}/secret/${secret.id}`
@@ -205,10 +209,6 @@ export function SecretSlide({
             className="resize-none"
           />
           <div className="flex justify-between">
-            <Button variant="outline" size="sm" onClick={handleShare}>
-              <Share2 className="h-4 w-4 mr-1" />
-              Share
-            </Button>
             <Button
               size="sm"
               onClick={handleCommentSubmit}
@@ -216,6 +216,13 @@ export function SecretSlide({
             >
               {commentMutation.isPending ? "Posting..." : "Post Comment"}
             </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="sm" onClick={handleShare}>
+                <Share2 className="h-4 w-4 mr-1" />
+                Share
+              </Button>
+              <SecretActionsMenu secretId={secret.id} />
+            </div>
           </div>
         </div>
 

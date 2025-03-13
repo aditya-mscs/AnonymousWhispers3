@@ -1,4 +1,8 @@
 import type { Secret, Comment } from "@/types/secret"
+import { browserSafeClient } from "./browser-safe-client"
+
+// Determine if we're in a browser environment
+const isBrowser = typeof window !== "undefined"
 
 // Helper function to get the base URL
 function getBaseUrl() {
@@ -15,10 +19,15 @@ function getBaseUrl() {
 export const secretsApi = {
   // Get all secrets
   getSecrets: async (type = "recent", limit = 10, page = 1): Promise<Secret[]> => {
+    // In browser environments, use the browser-safe client
+    if (isBrowser) {
+      return browserSafeClient.getSecrets(type, limit, page)
+    }
+
     const baseUrl = getBaseUrl()
 
     try {
-      // First try the real API
+      // Try the real API
       const response = await fetch(`${baseUrl}/api/secrets?type=${type}&limit=${limit}&page=${page}`)
 
       if (response.ok) {
@@ -43,6 +52,13 @@ export const secretsApi = {
   // Get a single secret by ID
   getSecretById: async (id: string): Promise<Secret> => {
     console.log(`API Client: Fetching secret with ID: ${id}`)
+
+    // In browser environments, use the browser-safe client
+    if (isBrowser) {
+      const secret = await browserSafeClient.getSecretById(id)
+      if (!secret) throw new Error("Secret not found")
+      return secret
+    }
 
     // Use absolute URL to avoid parsing issues
     const baseUrl = getBaseUrl()
@@ -90,6 +106,15 @@ export const secretsApi = {
     username?: string
     submissionToken?: string
   }): Promise<Secret> => {
+    // In browser environments, use the browser-safe client
+    if (isBrowser) {
+      return browserSafeClient.createSecret({
+        content: secret.content,
+        darkness: secret.darkness,
+        username: secret.username || `Anonymous${Math.floor(Math.random() * 1000)}`,
+      })
+    }
+
     const baseUrl = getBaseUrl()
 
     try {
@@ -129,6 +154,11 @@ export const secretsApi = {
 
   // Add a comment to a secret
   addComment: async (secretId: string, comment: { content: string; username: string }): Promise<Comment> => {
+    // In browser environments, use the browser-safe client
+    if (isBrowser) {
+      return browserSafeClient.addComment(secretId, comment)
+    }
+
     const baseUrl = getBaseUrl()
 
     try {
@@ -176,6 +206,24 @@ export const secretsApi = {
 
   // Update secret interactions (share, view)
   updateInteractions: async (secretId: string, action: "share" | "view"): Promise<Secret> => {
+    // In browser environments, use the browser-safe client
+    if (isBrowser) {
+      await browserSafeClient.updateInteractions(secretId, action)
+      const secret = await browserSafeClient.getSecretById(secretId)
+      return (
+        secret || {
+          id: secretId,
+          content: "",
+          darkness: 0,
+          username: "",
+          createdAt: new Date().toISOString(),
+          comments: [],
+          views: action === "view" ? 1 : 0,
+          shares: action === "share" ? 1 : 0,
+        }
+      )
+    }
+
     const baseUrl = getBaseUrl()
 
     try {
@@ -209,6 +257,71 @@ export const secretsApi = {
       views: action === "view" ? 1 : 0,
       shares: action === "share" ? 1 : 0,
     }
+  },
+
+  // Report a secret
+  reportSecret: async (
+    secretId: string,
+    data: { reason: string; username: string },
+  ): Promise<{ success: boolean; message: string }> => {
+    // In browser environments, use the browser-safe client
+    if (isBrowser) {
+      return browserSafeClient.reportSecret(secretId, data)
+    }
+
+    const baseUrl = getBaseUrl()
+
+    try {
+      // Try the real API
+      const response = await fetch(`${baseUrl}/api/secrets/${secretId}/report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (response.ok) {
+        return await response.json()
+      }
+
+      console.warn("Real API failed for reporting secret, using client-side mock")
+    } catch (error) {
+      console.error("Error reporting secret with real API:", error)
+    }
+
+    // Return a mock success response
+    return {
+      success: true,
+      message: "Thank you for your report. Our team will review this content shortly.",
+    }
+  },
+
+  // Get all reported secrets (for admin)
+  getReportedSecrets: async (): Promise<any[]> => {
+    // In browser environments, use the browser-safe client
+    if (isBrowser) {
+      return browserSafeClient.getReportedSecrets()
+    }
+
+    const baseUrl = getBaseUrl()
+
+    try {
+      // Try the real API
+      const response = await fetch(`${baseUrl}/api/admin/reports`)
+
+      if (response.ok) {
+        const data = await response.json()
+        return data.reportedSecrets
+      }
+
+      console.warn("Real API failed for getting reported secrets, using client-side mock")
+    } catch (error) {
+      console.error("Error getting reported secrets with real API:", error)
+    }
+
+    // Return empty array as fallback
+    return []
   },
 }
 

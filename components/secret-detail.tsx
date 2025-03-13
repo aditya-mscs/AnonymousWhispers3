@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { Share2 } from "lucide-react"
@@ -12,12 +14,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 import { getUsernameFromStorage, getUserRating, saveUserRating } from "@/lib/storage"
 import { getDarknessTextColor } from "@/lib/utils"
+import SecretActionsMenu from "@/components/secret-actions-menu"
 
 interface SecretDetailProps {
   secret: Secret
 }
 
-export function SecretDetail({ secret }: SecretDetailProps) {
+export default function SecretDetail({ secret }: SecretDetailProps) {
   const [comment, setComment] = useState("")
   const [userRating, setUserRating] = useState(0)
   const [tempRating, setTempRating] = useState(0)
@@ -111,7 +114,8 @@ export function SecretDetail({ secret }: SecretDetailProps) {
   }
 
   // Handle share button click
-  const handleShare = async () => {
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation()
     try {
       // Create share URL
       const shareUrl = `${window.location.origin}/secret/${secret.id}`
@@ -191,11 +195,12 @@ export function SecretDetail({ secret }: SecretDetailProps) {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-end">
+        <CardFooter className="flex justify-end gap-1">
           <Button variant="outline" onClick={handleShare}>
             <Share2 className="h-4 w-4 mr-2" />
             Share
           </Button>
+          <SecretActionsMenu secretId={secret.id} />
         </CardFooter>
       </Card>
 

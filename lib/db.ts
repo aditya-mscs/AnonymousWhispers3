@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from "uuid"
-import { createHash } from "crypto"
-import { Secret, Comment } from "./db-models"
+import { docClient, SECRETS_TABLE, COMMENTS_TABLE } from "./db-models"
+import { PutCommand, GetCommand, ScanCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb"
 import type { Secret as SecretType, Comment as CommentType } from "@/types/secret"
 import { getAwsEnvironment } from "./aws-env"
+import { hashIp } from "./crypto-utils"
 
 // Get environment variables
 const awsEnv = getAwsEnvironment()
@@ -30,13 +31,6 @@ const mockSecrets: SecretType[] = [
   // Add more mock data as needed
 ]
 
-// Hash IP address for privacy
-export function hashIp(ip: string): string {
-  return createHash("sha256")
-    .update(ip + (awsEnv.ipHashSalt || "default-salt"))
-    .digest("hex")
-}
-
 // Function to save a new secret
 export async function saveSecret(
   secretData: Omit<SecretType, "id" | "comments" | "views" | "shares">,
@@ -45,16 +39,21 @@ export async function saveSecret(
 
   try {
     // Save to DynamoDB
-    await Secret.put({
-      id,
-      content: secretData.content,
-      darkness: secretData.darkness,
-      username: secretData.username,
-      ipHash: secretData.ipHash,
-      createdAt: secretData.createdAt instanceof Date ? secretData.createdAt.toISOString() : secretData.createdAt,
-      views: 0,
-      shares: 0,
-    })
+    await docClient.send(
+      new PutCommand({
+        TableName: SECRETS_TABLE,
+        Item: {
+          id,
+          content: secretData.content,
+          darkness: secretData.darkness,
+          username: secretData.username,
+          ipHash: secretData.ipHash,
+          createdAt: secretData.createdAt instanceof Date ? secretData.createdAt.toISOString() : secretData.createdAt,
+          views: 0,
+          shares: 0,
+        },
+      }),
+    )
 
     // Return the new secret
     return {
@@ -95,7 +94,12 @@ export async function saveSecret(
 export async function getSecretById(id: string): Promise<SecretType | null> {
   try {
     // Get the secret from DynamoDB
-    const result = await Secret.get({ id })
+    const result = await docClient.send(
+      new GetCommand({
+        TableName: SECRETS_TABLE,
+        Key: { id },
+      }),
+    )
 
     if (!result.Item) {
       // Check mock data in development
@@ -107,10 +111,18 @@ export async function getSecretById(id: string): Promise<SecretType | null> {
     }
 
     // Increment view count
-    await Secret.update({
-      id,
-      views: result.Item.views + 1,
-    })
+    await docClient.send(
+      new UpdateCommand({
+        TableName: SECRETS_TABLE,
+        Key: { id },
+        UpdateExpression: "SET views = if_not_exists(views, :zero) + :one",
+        ExpressionAttributeValues: {
+          ":zero": 0,
+          ":one": 1,
+        },
+        ReturnValues: "NONE",
+      }),
+    )
 
     // Get comments for this secret
     const comments = await getCommentsBySecretId(id)
@@ -123,8 +135,8 @@ export async function getSecretById(id: string): Promise<SecretType | null> {
       username: result.Item.username,
       createdAt: result.Item.createdAt,
       comments,
-      views: result.Item.views + 1, // Include the view we just added
-      shares: result.Item.shares,
+      views: (result.Item.views || 0) + 1, // Include the view we just added
+      shares: result.Item.shares || 0,
     }
   } catch (error) {
     console.error("Error fetching secret:", error)
@@ -143,30 +155,30 @@ export async function getSecretById(id: string): Promise<SecretType | null> {
 export async function getSecrets(type = "recent", limit = 10, page = 1): Promise<SecretType[]> {
   try {
     console.log(`DB: getSecrets called with type=${type}, limit=${limit}, page=${page}`)
-    console.log(`DB: Using tables - SECRETS_TABLE=${awsEnv.secretsTable}, COMMENTS_TABLE=${awsEnv.commentsTable}`)
+    console.log(`DB: Using tables - SECRETS_TABLE=${SECRETS_TABLE}, COMMENTS_TABLE=${COMMENTS_TABLE}`)
 
     let secrets: any[] = []
     const offset = (page - 1) * limit
 
     // Query DynamoDB based on the type
+    const scanResult = await docClient.send(
+      new ScanCommand({
+        TableName: SECRETS_TABLE,
+      }),
+    )
+
+    secrets = scanResult.Items || []
+    console.log(`DB: Found ${secrets.length} secrets before sorting/pagination`)
+
+    // Sort based on type
     switch (type) {
       case "dark":
-        // Query using the DarknessIndex GSI, sorted in descending order
-        console.log("DB: Fetching dark secrets")
-        const darkResults = await Secret.scan()
-        secrets = darkResults.Items || []
-        console.log(`DB: Found ${secrets.length} secrets before sorting/pagination`)
         // Sort by darkness level in descending order (darkest first)
         secrets.sort((a, b) => b.darkness - a.darkness)
         break
 
       case "trending":
         // For trending, we need to calculate based on interactions and darkness
-        console.log("DB: Fetching trending secrets")
-        const trendingResults = await Secret.scan()
-        secrets = trendingResults.Items || []
-        console.log(`DB: Found ${secrets.length} secrets before sorting/pagination`)
-
         // Get comments for each secret to calculate trending score
         for (const secret of secrets) {
           const comments = await getCommentsBySecretId(secret.id)
@@ -176,19 +188,13 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
         // Sort by a "trending score" that includes darkness level
         secrets.sort((a, b) => {
           // Calculate trending score: (views + shares*2 + comments*3) * (darkness/5)
-          // This gives more weight to comments and shares, and boosts darker secrets
           const aScore = ((a.views || 0) + (a.shares || 0) * 2 + (a.commentCount || 0) * 3) * (a.darkness / 5)
-          const bScore = ((b.views || 0) + (b.shares || 0) * 2 + (b.commentCount || 0) * 3) * (b.darkness / 5)
+          const bScore = ((b.views || 0) + (b.shares || 0) * 2 + (b.commentCount || 0) * 3) * (a.darkness / 5)
           return bScore - aScore // Descending order
         })
         break
 
       default: // recent
-        // Query using the CreatedAtIndex GSI, sorted in descending order
-        console.log("DB: Fetching recent secrets")
-        const recentResults = await Secret.scan()
-        secrets = recentResults.Items || []
-        console.log(`DB: Found ${secrets.length} secrets before sorting/pagination`)
         // Sort by creation date in descending order (newest first)
         secrets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     }
@@ -215,8 +221,8 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
           username: secret.username,
           createdAt: secret.createdAt,
           comments,
-          views: secret.views,
-          shares: secret.shares,
+          views: secret.views || 0,
+          shares: secret.shares || 0,
         }
       }),
     )
@@ -240,10 +246,16 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
 export async function getCommentsBySecretId(secretId: string): Promise<CommentType[]> {
   try {
     // Query using the SecretIdIndex GSI
-    const result = await Comment.query(secretId, {
-      index: "SecretIdIndex",
-      reverse: false, // Sort in ascending order by creation time
-    })
+    const result = await docClient.send(
+      new QueryCommand({
+        TableName: COMMENTS_TABLE,
+        IndexName: "SecretIdIndex",
+        KeyConditionExpression: "secretId = :secretId",
+        ExpressionAttributeValues: {
+          ":secretId": secretId,
+        },
+      }),
+    )
 
     return (result.Items || []).map((item: any) => ({
       id: item.id,
@@ -277,14 +289,19 @@ export async function addComment(commentData: {
 
   try {
     // Save to DynamoDB
-    await Comment.put({
-      id,
-      secretId: commentData.secretId,
-      content: commentData.content,
-      username: commentData.username,
-      ipHash: commentData.ipHash,
-      createdAt: commentData.createdAt.toISOString(),
-    })
+    await docClient.send(
+      new PutCommand({
+        TableName: COMMENTS_TABLE,
+        Item: {
+          id,
+          secretId: commentData.secretId,
+          content: commentData.content,
+          username: commentData.username,
+          ipHash: commentData.ipHash,
+          createdAt: commentData.createdAt.toISOString(),
+        },
+      }),
+    )
 
     // Return the new comment
     return {
@@ -308,20 +325,31 @@ export async function updateSecretInteractions(secretId: string, action: "share"
       return null
     }
 
-    const updates: any = {}
+    const updateExpression =
+      action === "share"
+        ? "SET shares = if_not_exists(shares, :zero) + :one"
+        : "SET views = if_not_exists(views, :zero) + :one"
 
+    await docClient.send(
+      new UpdateCommand({
+        TableName: SECRETS_TABLE,
+        Key: { id: secretId },
+        UpdateExpression: updateExpression,
+        ExpressionAttributeValues: {
+          ":zero": 0,
+          ":one": 1,
+        },
+      }),
+    )
+
+    // Update the local object
     if (action === "share") {
-      updates.shares = (secret.shares || 0) + 1
+      secret.shares = (secret.shares || 0) + 1
     } else if (action === "view") {
-      updates.views = (secret.views || 0) + 1
+      secret.views = (secret.views || 0) + 1
     }
 
-    await Secret.update({
-      id: secretId,
-      ...updates,
-    })
-
-    return { ...secret, ...updates }
+    return secret
   } catch (error) {
     console.error("Error updating secret interactions:", error)
     return null
@@ -333,15 +361,163 @@ export async function getSubmissionCountByIp(ipHash: string): Promise<number> {
   try {
     // In a real implementation, you would query your database
     // to count submissions from this IP hash
+    const result = await docClient.send(
+      new ScanCommand({
+        TableName: SECRETS_TABLE,
+        FilterExpression: "ipHash = :ipHash",
+        ExpressionAttributeValues: {
+          ":ipHash": ipHash,
+        },
+        Select: "COUNT",
+      }),
+    )
 
-    // For now, we'll use a simple in-memory approach for demonstration
-    // In production, you'd want to use your database
-
-    // This is just a placeholder implementation
-    return 0 // Assume first submission for everyone in this demo
+    return result.Count || 0
   } catch (error) {
     console.error("Error checking submission count:", error)
     return 0 // Default to first submission on error
   }
 }
+
+// Define the report type
+interface ReportData {
+  secretId: string
+  reason: string
+  username: string
+  ipHash: string
+  createdAt: Date
+}
+
+// Function to report a secret
+export async function reportSecret(reportData: ReportData): Promise<{ success: boolean; message?: string }> {
+  try {
+    // Check if user already reported this secret
+    const existingReports = await docClient.send(
+      new ScanCommand({
+        TableName: "anonymous-dark-secrets-reports",
+        FilterExpression: "secretId = :secretId AND ipHash = :ipHash",
+        ExpressionAttributeValues: {
+          ":secretId": reportData.secretId,
+          ":ipHash": reportData.ipHash,
+        },
+      }),
+    )
+
+    if (existingReports.Items && existingReports.Items.length > 0) {
+      return { success: false, message: "You have already reported this secret" }
+    }
+
+    // Get the secret to update report count
+    const secretResult = await docClient.send(
+      new GetCommand({
+        TableName: SECRETS_TABLE,
+        Key: { id: reportData.secretId },
+      }),
+    )
+
+    if (!secretResult.Item) {
+      return { success: false, message: "Secret not found" }
+    }
+
+    // Update the secret with report count
+    const secret = secretResult.Item
+    const reportCount = secret.reportCount || 0
+    const reportedBy = secret.reportedBy || []
+
+    // Add the username to reportedBy array if not already there
+    if (!reportedBy.includes(reportData.username)) {
+      reportedBy.push(reportData.username)
+    }
+
+    // Update the secret with new report count and reportedBy array
+    await docClient.send(
+      new UpdateCommand({
+        TableName: SECRETS_TABLE,
+        Key: { id: reportData.secretId },
+        UpdateExpression: "SET reportCount = :reportCount, reportedBy = :reportedBy",
+        ExpressionAttributeValues: {
+          ":reportCount": reportCount + 1,
+          ":reportedBy": reportedBy,
+        },
+      }),
+    )
+
+    // Save report record for admin review
+    const id = uuidv4()
+    await docClient.send(
+      new PutCommand({
+        TableName: "anonymous-dark-secrets-reports",
+        Item: {
+          id,
+          secretId: reportData.secretId,
+          reason: reportData.reason,
+          username: reportData.username,
+          ipHash: reportData.ipHash,
+          createdAt: reportData.createdAt.toISOString(),
+          status: "pending", // pending, reviewed, dismissed
+        },
+      }),
+    )
+
+    return { success: true }
+  } catch (error) {
+    console.error("Error reporting secret:", error)
+
+    // In development, just return success
+    if (process.env.NODE_ENV === "development") {
+      return { success: true }
+    }
+
+    return { success: false, message: "Failed to submit report" }
+  }
+}
+
+// Function to get all reported secrets (for admin)
+export async function getReportedSecrets(): Promise<any[]> {
+  try {
+    // Get all reports
+    const reportsResult = await docClient.send(
+      new ScanCommand({
+        TableName: "anonymous-dark-secrets-reports",
+      }),
+    )
+
+    const reports = reportsResult.Items || []
+
+    // Group reports by secretId
+    const reportsBySecret = new Map()
+
+    for (const report of reports) {
+      const secretId = report.secretId
+      const reportsForSecret = reportsBySecret.get(secretId) || []
+      reportsForSecret.push(report)
+      reportsBySecret.set(secretId, reportsForSecret)
+    }
+
+    // Get details for each reported secret
+    const reportedSecrets = []
+
+    for (const [secretId, secretReports] of reportsBySecret.entries()) {
+      const secret = await getSecretById(secretId)
+
+      if (secret) {
+        reportedSecrets.push({
+          secret,
+          reports: secretReports,
+          reportCount: secretReports.length,
+        })
+      }
+    }
+
+    // Sort by number of reports (most reported first)
+    reportedSecrets.sort((a, b) => b.reportCount - a.reportCount)
+
+    return reportedSecrets
+  } catch (error) {
+    console.error("Error getting reported secrets:", error)
+    return []
+  }
+}
+
+export { hashIp }
 

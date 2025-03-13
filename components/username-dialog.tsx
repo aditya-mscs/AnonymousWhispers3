@@ -6,7 +6,8 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-// Using a regular HTML label instead of the Radix UI component
+// Using our custom Label component
+import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { saveUsernameToStorage } from "@/lib/storage"
 import { generateRandomUsername } from "@/lib/utils"
@@ -65,12 +66,12 @@ export function UsernameDialog({ open, onOpenChange, currentUsername, onUsername
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <label
+              <Label
                 htmlFor="username"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 Username
-              </label>
+              </Label>
               <Input
                 id="username"
                 value={username}

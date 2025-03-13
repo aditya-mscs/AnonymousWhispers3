@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { SecretDetail } from "@/components/secret-detail"
+import SecretDetail from "@/components/secret-detail"
 import { secretsApi } from "@/lib/api-client"
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, GetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb"

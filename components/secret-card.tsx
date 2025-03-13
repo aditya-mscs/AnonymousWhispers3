@@ -1,13 +1,15 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
-import { Share2, MessageSquare } from "lucide-react"
+import { MessageSquare, Share2 } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { SecretSlide } from "@/components/secret-slide"
+import SecretSlide from "@/components/secret-slide"
 import type { Secret } from "@/types/secret"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { getUserRating, saveUserRating } from "@/lib/storage"
@@ -15,6 +17,7 @@ import { useToast } from "@/hooks/use-toast"
 import { secretsApi } from "@/lib/api-client"
 import { SuperToast } from "@/components/super-toast"
 import { getDarknessTextColor } from "@/lib/utils"
+import SecretActionsMenu from "@/components/secret-actions-menu"
 
 interface SecretCardProps {
   secret: Secret
@@ -48,7 +51,8 @@ export default function SecretCard({ secret }: SecretCardProps) {
     },
   })
 
-  const handleShare = async () => {
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation()
     try {
       // Create share URL
       const shareUrl = `${window.location.origin}/secret/${secret.id}`
@@ -136,10 +140,13 @@ export default function SecretCard({ secret }: SecretCardProps) {
               <MessageSquare className="h-4 w-4 mr-1" />
               {secret.comments?.length || 0}
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleShare}>
-              <Share2 className="h-4 w-4 mr-1" />
-              Share
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" onClick={handleShare}>
+                <Share2 className="h-4 w-4 mr-1" />
+                Share
+              </Button>
+              <SecretActionsMenu secretId={secret.id} />
+            </div>
           </div>
         </CardFooter>
       </Card>
