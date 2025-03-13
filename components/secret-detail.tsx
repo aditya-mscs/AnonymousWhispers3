@@ -224,8 +224,8 @@ export function SecretDetail({ secret }: SecretDetailProps) {
             className="resize-none"
           />
           <div className="flex justify-end">
-            <Button onClick={handleCommentSubmit} disabled={comment.trim().length < 3 || commentMutation.isPending}>
-              {commentMutation.isPending ? "Posting..." : "Post Comment"}
+            <Button onClick={handleCommentSubmit} disabled={comment.trim().length < 3 || commentMutation.isLoading}>
+              {commentMutation.isLoading ? "Posting..." : "Post Comment"}
             </Button>
           </div>
 

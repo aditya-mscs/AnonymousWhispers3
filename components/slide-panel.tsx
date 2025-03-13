@@ -34,12 +34,16 @@ export function SlidePanel({ open, onClose, children, title }: SlidePanelProps) 
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+      onClick={() => onClose()} // Close when clicking the backdrop
+    >
       <div
         className={cn(
           "fixed inset-y-0 right-0 z-50 flex flex-col w-full sm:w-[80%] h-full bg-background shadow-lg border-l transform transition-transform duration-300 ease-in-out",
           open ? "translate-x-0" : "translate-x-full",
         )}
+        onClick={(e) => e.stopPropagation()} // Prevent clicks inside the panel from closing it
       >
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold">{title || "Details"}</h2>
