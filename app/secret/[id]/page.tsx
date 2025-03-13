@@ -10,7 +10,7 @@ interface SecretPageProps {
   }
 }
 
-// Direct DB access function as a fallback -> Not used for now
+// Direct DB access function as a fallback
 async function getSecretDirectlyFromDB(id: string) {
   try {
     console.log("Attempting direct DB access for secret:", id)
@@ -109,8 +109,8 @@ export default async function SecretPage({ params }: SecretPageProps) {
       console.error("API client error:", apiError)
 
       // If API client fails, try direct DB access
-      // console.log("Falling back to direct DB access")
-      // secret = await getSecretDirectlyFromDB(id)
+      console.log("Falling back to direct DB access")
+      secret = await getSecretDirectlyFromDB(id)
     }
 
     if (!secret) {

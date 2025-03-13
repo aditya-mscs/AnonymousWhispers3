@@ -46,23 +46,54 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, secret }, { status: 201 })
   } catch (error) {
     console.error("Error creating secret:", error)
-    return NextResponse.json({ error: "Failed to create secret" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Failed to create secret",
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      { status: 500 },
+    )
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
+    console.log("API: GET /api/secrets - Starting request")
+
     const searchParams = request.nextUrl.searchParams
     const type = searchParams.get("type") || "recent"
     const limit = Number.parseInt(searchParams.get("limit") || "10", 10)
     const page = Number.parseInt(searchParams.get("page") || "1", 10)
 
+    console.log(`API: Fetching secrets with type=${type}, limit=${limit}, page=${page}`)
+
     const secrets = await getSecrets(type, limit, page)
+
+    console.log(`API: Found ${secrets.length} secrets`)
+
+    // If no secrets were found, return an empty array but with a 200 status
+    if (secrets.length === 0) {
+      console.log("API: No secrets found, returning empty array")
+      return NextResponse.json({
+        secrets: [],
+        message: "No secrets found. The database may be empty.",
+        params: { type, limit, page },
+      })
+    }
 
     return NextResponse.json({ secrets })
   } catch (error) {
     console.error("Error fetching secrets:", error)
-    return NextResponse.json({ error: "Failed to fetch secrets" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Failed to fetch secrets",
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 },
+    )
   }
 }
 

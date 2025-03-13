@@ -138,6 +138,11 @@ export async function getSecretById(id: string): Promise<SecretType | null> {
 // Function to get secrets by type (recent, dark, trending)
 export async function getSecrets(type = "recent", limit = 10, page = 1): Promise<SecretType[]> {
   try {
+    console.log(`DB: getSecrets called with type=${type}, limit=${limit}, page=${page}`)
+    console.log(
+      `DB: Using tables - SECRETS_TABLE=${process.env.SECRETS_TABLE}, COMMENTS_TABLE=${process.env.COMMENTS_TABLE}`,
+    )
+
     let secrets: any[] = []
     const offset = (page - 1) * limit
 
@@ -145,15 +150,19 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
     switch (type) {
       case "dark":
         // Query using the DarknessIndex GSI, sorted in descending order
+        console.log("DB: Fetching dark secrets")
         const darkResults = await Secret.scan()
         secrets = darkResults.Items || []
+        console.log(`DB: Found ${secrets.length} secrets before sorting/pagination`)
         secrets.sort((a, b) => b.darkness - a.darkness)
         break
 
       case "trending":
         // For trending, we need to calculate based on interactions
+        console.log("DB: Fetching trending secrets")
         const trendingResults = await Secret.scan()
         secrets = trendingResults.Items || []
+        console.log(`DB: Found ${secrets.length} secrets before sorting/pagination`)
 
         // Get comments for each secret to calculate trending score
         for (const secret of secrets) {
@@ -171,13 +180,23 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
 
       default: // recent
         // Query using the CreatedAtIndex GSI, sorted in descending order
+        console.log("DB: Fetching recent secrets")
         const recentResults = await Secret.scan()
         secrets = recentResults.Items || []
+        console.log(`DB: Found ${secrets.length} secrets before sorting/pagination`)
         secrets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     }
 
     // Apply pagination
+    console.log(`DB: Applying pagination with offset=${offset}, limit=${limit}`)
     secrets = secrets.slice(offset, offset + limit)
+    console.log(`DB: After pagination, returning ${secrets.length} secrets`)
+
+    // If no secrets found, return empty array in development
+    if (secrets.length === 0 && process.env.NODE_ENV === "development") {
+      console.log("DB: No secrets found, using mock data in development")
+      return mockSecrets.slice(0, limit)
+    }
 
     // Get comments for each secret
     const secretsWithComments = await Promise.all(
@@ -203,10 +222,11 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
     // In development, use mock data
     if (process.env.NODE_ENV === "development") {
       console.log("Using mock data instead")
-      return mockSecrets
+      return mockSecrets.slice(0, limit)
     }
 
-    return []
+    // Re-throw the error to be handled by the caller
+    throw error
   }
 }
 
