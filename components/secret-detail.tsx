@@ -62,6 +62,7 @@ export function SecretDetail({ secret }: SecretDetailProps) {
       toast({
         title: "Comment added",
         description: "Your comment has been added to the secret.",
+        variant: "success",
       })
 
       // Invalidate queries to refresh data
@@ -105,6 +106,7 @@ export function SecretDetail({ secret }: SecretDetailProps) {
     toast({
       title: "Rating saved",
       description: `You rated this secret ${newRating}/10 for darkness.`,
+      variant: "success",
     })
   }
 
@@ -135,6 +137,7 @@ export function SecretDetail({ secret }: SecretDetailProps) {
         toast({
           title: "Link copied",
           description: "Secret link copied to clipboard!",
+          variant: "success",
         })
       }
 

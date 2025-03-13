@@ -14,6 +14,7 @@ import { addSecret } from "@/redux/features/secrets/secretsSlice"
 import { getUsernameFromStorage, saveUsernameToStorage } from "@/lib/storage"
 import { secretsApi } from "@/lib/api-client"
 import { generateSubmissionToken } from "@/lib/submission-token"
+import { SuperToast } from "@/components/super-toast"
 
 // Define SpeechRecognition and SpeechRecognitionEvent types
 declare global {
@@ -80,17 +81,16 @@ export default function SecretInput() {
         }
       }, 100)
 
-      toast({
-        title: "Secret shared successfully",
-        description: "Your secret has been anonymously shared.",
+      SuperToast.show({
+        message: "Your secret has been shared anonymously.",
+        type: "success",
       })
     },
     onError: (error: Error) => {
       setIsSubmitting(false)
-      toast({
-        title: "Failed to share secret",
-        description: error.message,
-        variant: "destructive",
+      SuperToast.show({
+        message: error.message,
+        type: "error",
       })
     },
   })
@@ -122,10 +122,9 @@ export default function SecretInput() {
 
   const toggleRecording = () => {
     if (!isSpeechRecognitionAvailable) {
-      toast({
-        title: "Voice recognition not available",
-        description: "Your browser doesn't support voice recognition.",
-        variant: "destructive",
+      SuperToast.show({
+        message: "Your browser doesn't support voice recognition.",
+        type: "error",
       })
       return
     }
@@ -135,7 +134,6 @@ export default function SecretInput() {
       setIsRecording(false)
     } else {
       // Use SpeechRecognition or webkitSpeechRecognition based on availability
-      // const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
       if (SpeechRecognition) {
         recognitionRef.current = new SpeechRecognition()
         recognitionRef.current.continuous = false
@@ -150,10 +148,9 @@ export default function SecretInput() {
 
         recognitionRef.current.onerror = (event: any) => {
           console.error("Speech recognition error:", event.error)
-          toast({
-            title: "Speech recognition error",
-            description: `Error: ${event.error}`,
-            variant: "destructive",
+          SuperToast.show({
+            message: "There was an error with the speech recognition.",
+            type: "error",
           })
           setIsRecording(false)
         }
@@ -165,10 +162,9 @@ export default function SecretInput() {
         recognitionRef.current.start()
         setIsRecording(true)
       } else {
-        toast({
-          title: "Speech recognition not available",
-          description: "Your browser doesn't support voice recognition.",
-          variant: "destructive",
+        SuperToast.show({
+          message: "Your browser doesn't support voice recognition.",
+          type: "error",
         })
       }
     }
@@ -189,10 +185,9 @@ export default function SecretInput() {
 
     // Validate content
     if (content.trim().length < 10) {
-      toast({
-        title: "Secret too short",
-        description: "Your secret must be at least 10 characters long.",
-        variant: "destructive",
+      SuperToast.show({
+        message: "Your secret must be at least 10 characters long.",
+        type: "error",
       })
       return
     }
@@ -200,10 +195,9 @@ export default function SecretInput() {
     // Check for URLs
     const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi
     if (urlRegex.test(content)) {
-      toast({
-        title: "URLs not allowed",
-        description: "For security reasons, URLs are not allowed in secrets.",
-        variant: "destructive",
+      SuperToast.show({
+        message: "URLs are not allowed in secrets for security reasons.",
+        type: "error",
       })
       return
     }
@@ -245,10 +239,9 @@ export default function SecretInput() {
 
     // Allow a small margin of error (±2)
     if (Math.abs(sliderValueInt - targetValueInt) > 2) {
-      toast({
-        title: "CAPTCHA verification failed",
-        description: "Please drag the slider to the target value.",
-        variant: "destructive",
+      SuperToast.show({
+        message: "Please try again with the correct slider value.",
+        type: "error",
       })
       generateCaptcha() // Generate a new CAPTCHA
       return

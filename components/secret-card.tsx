@@ -7,13 +7,14 @@ import { Share2, MessageSquare } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { SecretDialog } from "@/components/secret-dialog"
+import { SecretSlide } from "@/components/secret-slide"
 import type { Secret } from "@/types/secret"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { getUserRating, saveUserRating } from "@/lib/storage"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { secretsApi } from "@/lib/api-client"
+import { SuperToast } from "@/components/super-toast"
 
 interface SecretCardProps {
   secret: Secret
@@ -62,9 +63,9 @@ export default function SecretCard({ secret }: SecretCardProps) {
       } else {
         // Fallback to clipboard
         await navigator.clipboard.writeText(shareUrl)
-        toast({
-          title: "Link copied",
-          description: "Secret link copied to clipboard!",
+        SuperToast.show({
+          message: "Secret link copied to clipboard!",
+          type: "success",
         })
       }
 
@@ -92,9 +93,9 @@ export default function SecretCard({ secret }: SecretCardProps) {
     // Save to localStorage - this is the only place we make a "service call"
     saveUserRating(secret.id, newRating)
 
-    toast({
-      title: "Rating saved",
-      description: `You rated this secret ${newRating}/10 for darkness.`,
+    SuperToast.show({
+      message: `You rated this secret ${newRating}/10 for darkness.`,
+      type: "success",
     })
   }
 
@@ -157,7 +158,8 @@ export default function SecretCard({ secret }: SecretCardProps) {
         </CardFooter>
       </Card>
 
-      <SecretDialog
+      {/* Replace the SecretDialog component with SecretSlide at the end of the component */}
+      <SecretSlide
         secret={secret}
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}

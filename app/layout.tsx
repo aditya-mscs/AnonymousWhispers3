@@ -5,7 +5,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import Header from "@/components/header"
 import { Providers } from "@/redux/providers"
-import { Toaster } from "@/components/ui/toaster"
+import { ToastContainer } from "@/components/super-toast"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -27,7 +27,7 @@ export default function RootLayout({
             <div className="min-h-screen bg-background">
               <Header />
               <main className="container mx-auto px-4 py-6">{children}</main>
-              <Toaster />
+              <ToastContainer />
             </div>
           </Providers>
         </ThemeProvider>
