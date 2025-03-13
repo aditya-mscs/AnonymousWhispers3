@@ -1,33 +1,22 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb"
+import { getAwsCredentials, logAwsConfig } from "./aws-env"
 
 // Log AWS configuration on startup
-console.log("AWS Config:", {
-  region: process.env.AWS_REGION,
-  hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-  hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
-  secretsTable: process.env.SECRETS_TABLE,
-  commentsTable: process.env.COMMENTS_TABLE,
-})
+const awsEnv = logAwsConfig()
 
 // Initialize the DynamoDB client with environment variables
 const client = new DynamoDBClient({
-  region: process.env.AWS_REGION || "us-east-1",
-  credentials:
-    process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
-      ? {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        }
-      : undefined, // Use default credentials provider chain if not provided
+  region: awsEnv.region,
+  credentials: getAwsCredentials(),
 })
 
 // Create a document client for easier interaction with DynamoDB
 export const docClient = DynamoDBDocumentClient.from(client)
 
-// Table names
-export const SECRETS_TABLE = process.env.SECRETS_TABLE || "anonymous-dark-secrets"
-export const COMMENTS_TABLE = process.env.COMMENTS_TABLE || "anonymous-dark-secrets-comments"
+// Export table names
+export const SECRETS_TABLE = awsEnv.secretsTable
+export const COMMENTS_TABLE = awsEnv.commentsTable
 
 // Helper function to check if AWS configuration is valid
 export async function checkAwsConfig() {
@@ -36,14 +25,8 @@ export async function checkAwsConfig() {
     const { STSClient, GetCallerIdentityCommand } = await import("@aws-sdk/client-sts")
 
     const stsClient = new STSClient({
-      region: process.env.AWS_REGION || "us-east-1",
-      credentials:
-        process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
-          ? {
-              accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-            }
-          : undefined,
+      region: awsEnv.region,
+      credentials: getAwsCredentials(),
     })
 
     const command = new GetCallerIdentityCommand({})
@@ -51,10 +34,10 @@ export async function checkAwsConfig() {
 
     return {
       valid: true,
-      region: process.env.AWS_REGION,
-      hasCredentials: Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY),
-      secretsTable: SECRETS_TABLE,
-      commentsTable: COMMENTS_TABLE,
+      region: awsEnv.region,
+      hasCredentials: awsEnv.hasCredentials,
+      secretsTable: awsEnv.secretsTable,
+      commentsTable: awsEnv.commentsTable,
       identity: {
         account: response.Account,
         arn: response.Arn,
@@ -64,10 +47,10 @@ export async function checkAwsConfig() {
     console.error("AWS config validation error:", error)
     return {
       valid: false,
-      region: process.env.AWS_REGION,
-      hasCredentials: Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY),
-      secretsTable: SECRETS_TABLE,
-      commentsTable: COMMENTS_TABLE,
+      region: awsEnv.region,
+      hasCredentials: awsEnv.hasCredentials,
+      secretsTable: awsEnv.secretsTable,
+      commentsTable: awsEnv.commentsTable,
       error: error instanceof Error ? error.message : String(error),
     }
   }

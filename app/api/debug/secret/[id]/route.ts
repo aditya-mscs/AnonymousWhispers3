@@ -9,16 +9,20 @@ export async function GET(request: Request, { params }: { params: { id: string }
     console.log("Debug API: Fetching secret with ID:", params.id)
     const secret = await directGetSecretById(params.id)
 
+    // Get AWS environment variables from the direct-db-access module
+    const { getAwsEnvironment } = await import("@/lib/aws-env")
+    const awsEnv = getAwsEnvironment()
+
     return NextResponse.json({
       tablesCheck,
       secretId: params.id,
       secretFound: !!secret,
       secret,
       env: {
-        region: process.env.AWS_REGION,
-        secretsTable: process.env.SECRETS_TABLE,
-        commentsTable: process.env.COMMENTS_TABLE,
-        hasCredentials: !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY),
+        region: awsEnv.region,
+        secretsTable: awsEnv.secretsTable,
+        commentsTable: awsEnv.commentsTable,
+        hasCredentials: awsEnv.hasCredentials,
       },
     })
   } catch (error) {

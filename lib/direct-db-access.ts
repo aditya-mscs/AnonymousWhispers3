@@ -1,31 +1,28 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, GetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb"
+import { getAwsEnvironment, getAwsCredentials } from "./aws-env"
+
+// Get AWS environment variables
+const awsEnv = getAwsEnvironment()
 
 // Initialize the DynamoDB client
 const client = new DynamoDBClient({
-  region: process.env.AWS_REGION || "us-east-1",
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-  },
+  region: awsEnv.region,
+  credentials: getAwsCredentials(),
 })
 
 // Create a document client for easier interaction with DynamoDB
 const docClient = DynamoDBDocumentClient.from(client)
 
-// Table names
-const SECRETS_TABLE = process.env.SECRETS_TABLE || "anonymous-dark-secrets"
-const COMMENTS_TABLE = process.env.COMMENTS_TABLE || "anonymous-dark-secrets-comments"
-
 // Function to directly get a secret by ID
 export async function directGetSecretById(id: string) {
   try {
     console.log("Direct DB: Fetching secret with ID:", id)
-    console.log("Direct DB: Using table:", SECRETS_TABLE)
+    console.log("Direct DB: Using table:", awsEnv.secretsTable)
 
     const result = await docClient.send(
       new GetCommand({
-        TableName: SECRETS_TABLE,
+        TableName: awsEnv.secretsTable,
         Key: { id },
       }),
     )
@@ -40,7 +37,7 @@ export async function directGetSecretById(id: string) {
     // Get comments for this secret
     const commentsResult = await docClient.send(
       new QueryCommand({
-        TableName: COMMENTS_TABLE,
+        TableName: awsEnv.commentsTable,
         IndexName: "SecretIdIndex",
         KeyConditionExpression: "secretId = :secretId",
         ExpressionAttributeValues: {
@@ -68,14 +65,14 @@ export async function checkTablesExist() {
   try {
     const secretsResult = await docClient.send(
       new GetCommand({
-        TableName: SECRETS_TABLE,
+        TableName: awsEnv.secretsTable,
         Key: { id: "test-id" },
       }),
     )
 
     const commentsResult = await docClient.send(
       new QueryCommand({
-        TableName: COMMENTS_TABLE,
+        TableName: awsEnv.commentsTable,
         IndexName: "SecretIdIndex",
         KeyConditionExpression: "secretId = :secretId",
         ExpressionAttributeValues: {

@@ -1,27 +1,28 @@
 import { NextResponse } from "next/server"
 import { DynamoDBClient, ListTablesCommand, ScanCommand } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb"
+import { getAwsEnvironment, getAwsCredentials } from "@/lib/aws-env"
 
 export async function GET() {
   try {
     console.log("Starting direct DynamoDB access check...")
 
+    // Get AWS environment variables
+    const awsEnv = getAwsEnvironment()
+
     // Log environment variables
     console.log("Environment:", {
-      region: process.env.AWS_REGION,
-      hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-      hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
-      secretsTable: process.env.SECRETS_TABLE,
-      commentsTable: process.env.COMMENTS_TABLE,
+      region: awsEnv.region,
+      hasAccessKey: !!awsEnv.accessKeyId,
+      hasSecretKey: !!awsEnv.secretAccessKey,
+      secretsTable: awsEnv.secretsTable,
+      commentsTable: awsEnv.commentsTable,
     })
 
     // Initialize the DynamoDB client directly
     const client = new DynamoDBClient({
-      region: process.env.AWS_REGION || "us-east-1",
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-      },
+      region: awsEnv.region,
+      credentials: getAwsCredentials(),
     })
 
     // List tables to verify connection
@@ -30,17 +31,16 @@ export async function GET() {
     const tableNames = listTablesResponse.TableNames || []
 
     // Check if our tables exist
-    const SECRETS_TABLE = process.env.SECRETS_TABLE || "anonymous-dark-secrets"
-    const secretsTableExists = tableNames.includes(SECRETS_TABLE)
+    const secretsTableExists = tableNames.includes(awsEnv.secretsTable)
 
     // If the secrets table exists, try to scan it
     let secretsData = null
     if (secretsTableExists) {
-      console.log(`Scanning table: ${SECRETS_TABLE}`)
+      console.log(`Scanning table: ${awsEnv.secretsTable}`)
       const docClient = DynamoDBDocumentClient.from(client)
 
       const scanCommand = new ScanCommand({
-        TableName: SECRETS_TABLE,
+        TableName: awsEnv.secretsTable,
         Limit: 5,
       })
 
@@ -57,7 +57,7 @@ export async function GET() {
       tables: {
         all: tableNames,
         secretsTable: {
-          name: SECRETS_TABLE,
+          name: awsEnv.secretsTable,
           exists: secretsTableExists,
         },
       },

@@ -3,6 +3,7 @@ import { SecretDetail } from "@/components/secret-detail"
 import { secretsApi } from "@/lib/api-client"
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, GetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb"
+import { getAwsEnvironment, getAwsCredentials } from "@/lib/aws-env"
 
 interface SecretPageProps {
   params: {
@@ -15,23 +16,21 @@ async function getSecretDirectlyFromDB(id: string) {
   try {
     console.log("Attempting direct DB access for secret:", id)
 
+    // Get AWS environment variables
+    const awsEnv = getAwsEnvironment()
+
     // Initialize the DynamoDB client
     const client = new DynamoDBClient({
-      region: process.env.AWS_REGION || "us-east-1",
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-      },
+      region: awsEnv.region,
+      credentials: getAwsCredentials(),
     })
 
     const docClient = DynamoDBDocumentClient.from(client)
-    const SECRETS_TABLE = process.env.SECRETS_TABLE || "anonymous-dark-secrets"
-    const COMMENTS_TABLE = process.env.COMMENTS_TABLE || "anonymous-dark-secrets-comments"
 
     // Get the secret
     const secretResult = await docClient.send(
       new GetCommand({
-        TableName: SECRETS_TABLE,
+        TableName: awsEnv.secretsTable,
         Key: { id },
       }),
     )
@@ -44,7 +43,7 @@ async function getSecretDirectlyFromDB(id: string) {
     // Get comments for this secret
     const commentsResult = await docClient.send(
       new QueryCommand({
-        TableName: COMMENTS_TABLE,
+        TableName: awsEnv.commentsTable,
         IndexName: "SecretIdIndex",
         KeyConditionExpression: "secretId = :secretId",
         ExpressionAttributeValues: {
@@ -63,7 +62,7 @@ async function getSecretDirectlyFromDB(id: string) {
     // Increment view count
     await docClient.send(
       new GetCommand({
-        TableName: SECRETS_TABLE,
+        TableName: awsEnv.secretsTable,
         Key: { id },
         UpdateExpression: "SET views = if_not_exists(views, :zero) + :one",
         ExpressionAttributeValues: {

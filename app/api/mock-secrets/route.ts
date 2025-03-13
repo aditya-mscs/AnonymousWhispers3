@@ -86,3 +86,43 @@ export async function GET(request: Request) {
   }
 }
 
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const { content, darkness, username } = body
+
+    if (!content || content.length < 10) {
+      return NextResponse.json({ error: "Content must be at least 10 characters" }, { status: 400 })
+    }
+
+    // Create a mock secret
+    const secret = {
+      id: uuidv4(),
+      content,
+      darkness: darkness || 5,
+      username: username || `Anonymous${Math.floor(Math.random() * 1000)}`,
+      createdAt: new Date().toISOString(),
+      comments: [],
+      views: 0,
+      shares: 0,
+    }
+
+    return NextResponse.json({
+      success: true,
+      secret,
+      meta: {
+        isMockData: true,
+      },
+    })
+  } catch (error) {
+    console.error("Error creating mock secret:", error)
+    return NextResponse.json(
+      {
+        error: "Failed to create mock secret",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    )
+  }
+}
+

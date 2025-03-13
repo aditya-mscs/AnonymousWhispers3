@@ -3,11 +3,15 @@ import { v4 as uuidv4 } from "uuid"
 import { createHash } from "crypto"
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb"
+import { getAwsEnvironment, getAwsCredentials } from "@/lib/aws-env"
+
+// Get AWS environment variables
+const awsEnv = getAwsEnvironment()
 
 // Hash IP address for privacy
 function hashIp(ip: string): string {
   return createHash("sha256")
-    .update(ip + (process.env.IP_HASH_SALT || "default-salt"))
+    .update(ip + (awsEnv.ipHashSalt || "default-salt"))
     .digest("hex")
 }
 
@@ -90,20 +94,16 @@ export async function GET(request: Request) {
 
     // Initialize the DynamoDB client
     const client = new DynamoDBClient({
-      region: process.env.AWS_REGION || "us-east-1",
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-      },
+      region: awsEnv.region,
+      credentials: getAwsCredentials(),
     })
 
     const docClient = DynamoDBDocumentClient.from(client)
-    const SECRETS_TABLE = process.env.SECRETS_TABLE || "anonymous-dark-secrets"
 
     // Check if the table already has data
     const scanResponse = await docClient.send(
       new ScanCommand({
-        TableName: SECRETS_TABLE,
+        TableName: awsEnv.secretsTable,
         Limit: 1,
       }),
     )
@@ -124,7 +124,7 @@ export async function GET(request: Request) {
 
       await docClient.send(
         new PutCommand({
-          TableName: SECRETS_TABLE,
+          TableName: awsEnv.secretsTable,
           Item: {
             id,
             content: secret.content,

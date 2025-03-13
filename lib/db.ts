@@ -2,6 +2,10 @@ import { v4 as uuidv4 } from "uuid"
 import { createHash } from "crypto"
 import { Secret, Comment } from "./db-models"
 import type { Secret as SecretType, Comment as CommentType } from "@/types/secret"
+import { getAwsEnvironment } from "./aws-env"
+
+// Get environment variables
+const awsEnv = getAwsEnvironment()
 
 // Mock data for fallback
 const mockSecrets: SecretType[] = [
@@ -29,7 +33,7 @@ const mockSecrets: SecretType[] = [
 // Hash IP address for privacy
 export function hashIp(ip: string): string {
   return createHash("sha256")
-    .update(ip + (process.env.IP_HASH_SALT || "default-salt"))
+    .update(ip + (awsEnv.ipHashSalt || "default-salt"))
     .digest("hex")
 }
 
@@ -139,9 +143,7 @@ export async function getSecretById(id: string): Promise<SecretType | null> {
 export async function getSecrets(type = "recent", limit = 10, page = 1): Promise<SecretType[]> {
   try {
     console.log(`DB: getSecrets called with type=${type}, limit=${limit}, page=${page}`)
-    console.log(
-      `DB: Using tables - SECRETS_TABLE=${process.env.SECRETS_TABLE}, COMMENTS_TABLE=${process.env.COMMENTS_TABLE}`,
-    )
+    console.log(`DB: Using tables - SECRETS_TABLE=${awsEnv.secretsTable}, COMMENTS_TABLE=${awsEnv.commentsTable}`)
 
     let secrets: any[] = []
     const offset = (page - 1) * limit

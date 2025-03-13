@@ -1,23 +1,23 @@
 import { NextResponse } from "next/server"
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, GetCommand, ScanCommand } from "@aws-sdk/lib-dynamodb"
+import { getAwsEnvironment, getAwsCredentials } from "@/lib/aws-env"
 
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
     const id = url.searchParams.get("id")
 
+    // Get AWS environment variables
+    const awsEnv = getAwsEnvironment()
+
     // Initialize the DynamoDB client
     const client = new DynamoDBClient({
-      region: process.env.AWS_REGION || "us-east-1",
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-      },
+      region: awsEnv.region,
+      credentials: getAwsCredentials(),
     })
 
     const docClient = DynamoDBDocumentClient.from(client)
-    const SECRETS_TABLE = process.env.SECRETS_TABLE || "anonymous-dark-secrets"
 
     let result
 
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
       // Get a specific secret
       result = await docClient.send(
         new GetCommand({
-          TableName: SECRETS_TABLE,
+          TableName: awsEnv.secretsTable,
           Key: { id },
         }),
       )
@@ -34,14 +34,14 @@ export async function GET(request: Request) {
         id,
         found: !!result.Item,
         item: result.Item || null,
-        table: SECRETS_TABLE,
-        region: process.env.AWS_REGION,
+        table: awsEnv.secretsTable,
+        region: awsEnv.region,
       })
     } else {
       // List first 10 secrets
       result = await docClient.send(
         new ScanCommand({
-          TableName: SECRETS_TABLE,
+          TableName: awsEnv.secretsTable,
           Limit: 10,
         }),
       )
@@ -49,8 +49,8 @@ export async function GET(request: Request) {
       return NextResponse.json({
         count: result.Items?.length || 0,
         items: result.Items || [],
-        table: SECRETS_TABLE,
-        region: process.env.AWS_REGION,
+        table: awsEnv.secretsTable,
+        region: awsEnv.region,
       })
     }
   } catch (error) {

@@ -1,20 +1,18 @@
 import { DynamoDBClient, CreateTableCommand, ListTablesCommand } from "@aws-sdk/client-dynamodb"
 import dotenv from "dotenv"
+import { getAwsEnvironment, getAwsCredentials } from "@/lib/aws-env"
 
 // Load environment variables
 dotenv.config()
 
+// Get AWS environment variables
+const awsEnv = getAwsEnvironment()
+
 // Initialize the DynamoDB client
 const client = new DynamoDBClient({
-  region: process.env.AWS_REGION || "us-east-1",
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-  },
+  region: awsEnv.region,
+  credentials: getAwsCredentials(),
 })
-
-const SECRETS_TABLE = process.env.SECRETS_TABLE || "anonymous-dark-secrets"
-const COMMENTS_TABLE = process.env.COMMENTS_TABLE || "anonymous-dark-secrets-comments"
 
 async function createTables() {
   try {
@@ -23,12 +21,12 @@ async function createTables() {
     console.log("Existing tables:", TableNames || [])
 
     // Create Secrets table if it doesn't exist
-    if (!TableNames || !TableNames.includes(SECRETS_TABLE)) {
-      console.log(`Creating table: ${SECRETS_TABLE}`)
+    if (!TableNames || !TableNames.includes(awsEnv.secretsTable)) {
+      console.log(`Creating table: ${awsEnv.secretsTable}`)
 
       await client.send(
         new CreateTableCommand({
-          TableName: SECRETS_TABLE,
+          TableName: awsEnv.secretsTable,
           KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
           AttributeDefinitions: [{ AttributeName: "id", AttributeType: "S" }],
           ProvisionedThroughput: {
@@ -38,18 +36,18 @@ async function createTables() {
         }),
       )
 
-      console.log(`Table created: ${SECRETS_TABLE}`)
+      console.log(`Table created: ${awsEnv.secretsTable}`)
     } else {
-      console.log(`Table already exists: ${SECRETS_TABLE}`)
+      console.log(`Table already exists: ${awsEnv.secretsTable}`)
     }
 
     // Create Comments table if it doesn't exist
-    if (!TableNames || !TableNames.includes(COMMENTS_TABLE)) {
-      console.log(`Creating table: ${COMMENTS_TABLE}`)
+    if (!TableNames || !TableNames.includes(awsEnv.commentsTable)) {
+      console.log(`Creating table: ${awsEnv.commentsTable}`)
 
       await client.send(
         new CreateTableCommand({
-          TableName: COMMENTS_TABLE,
+          TableName: awsEnv.commentsTable,
           KeySchema: [
             { AttributeName: "id", KeyType: "HASH" },
             { AttributeName: "secretId", KeyType: "RANGE" },
@@ -76,9 +74,9 @@ async function createTables() {
         }),
       )
 
-      console.log(`Table created: ${COMMENTS_TABLE}`)
+      console.log(`Table created: ${awsEnv.commentsTable}`)
     } else {
-      console.log(`Table already exists: ${COMMENTS_TABLE}`)
+      console.log(`Table already exists: ${awsEnv.commentsTable}`)
     }
 
     console.log("Table setup complete!")

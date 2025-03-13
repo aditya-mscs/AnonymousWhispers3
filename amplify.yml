@@ -1,19 +1,26 @@
 version: 1
 frontend:
-  phases:
-    preBuild:
-      commands:
-        - npm ci
-    build:
-      commands:
-        - env | grep -e AWS_REGION -e SECRETS_TABLE -e COMMENTS_TABLE -e IP_HASH_SALT >> .env.production
-        - npm run build
-  artifacts:
-    baseDirectory: .next
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-      - .next/cache/**/*
+ phases:
+   preBuild:
+     commands:
+       - npm ci
+   build:
+     commands:
+       # Map environment variables to .env.production
+       - echo "MY_AWS_REGION=$MY_AWS_REGION" >> .env.production
+       - echo "MY_AWS_ACCESS_KEY=$MY_AWS_ACCESS_KEY" >> .env.production
+       - echo "MY_AWS_SECRET_KEY=$MY_AWS_SECRET_KEY" >> .env.production
+       - echo "SECRETS_TABLE=$SECRETS_TABLE" >> .env.production
+       - echo "COMMENTS_TABLE=$COMMENTS_TABLE" >> .env.production
+       - echo "IP_HASH_SALT=$IP_HASH_SALT" >> .env.production
+       - echo "NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL" >> .env.production
+       - npm run build
+ artifacts:
+   baseDirectory: .next
+   files:
+     - '**/*'
+ cache:
+   paths:
+     - node_modules/**/*
+     - .next/cache/**/*
 

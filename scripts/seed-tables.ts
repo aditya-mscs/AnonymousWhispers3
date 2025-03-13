@@ -3,30 +3,27 @@ import { DynamoDBDocumentClient, PutCommand, QueryCommand } from "@aws-sdk/lib-d
 import { v4 as uuidv4 } from "uuid"
 import { createHash } from "crypto"
 import dotenv from "dotenv"
+import { getAwsEnvironment, getAwsCredentials } from "@/lib/aws-env"
 
 // Load environment variables
 dotenv.config()
 
+// Get AWS environment variables
+const awsEnv = getAwsEnvironment()
+
 // Initialize the DynamoDB client
 const client = new DynamoDBClient({
-  region: process.env.AWS_REGION || "us-east-1",
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-  },
+  region: awsEnv.region,
+  credentials: getAwsCredentials(),
 })
 
 // Create a document client for easier interaction with DynamoDB
 const docClient = DynamoDBDocumentClient.from(client)
 
-// Table names
-const SECRETS_TABLE = process.env.SECRETS_TABLE || "anonymous-dark-secrets"
-const COMMENTS_TABLE = process.env.COMMENTS_TABLE || "anonymous-dark-secrets-comments"
-
 // Hash IP address for privacy
 function hashIp(ip: string): string {
   return createHash("sha256")
-    .update(ip + (process.env.IP_HASH_SALT || "default-salt"))
+    .update(ip + (awsEnv.ipHashSalt || "default-salt"))
     .digest("hex")
 }
 
@@ -268,7 +265,7 @@ async function seedDatabase() {
     const secretIds: string[] = []
 
     // Add secrets
-    console.log(`Adding ${mockSecrets.length} secrets to ${SECRETS_TABLE}...`)
+    console.log(`Adding ${mockSecrets.length} secrets to ${awsEnv.secretsTable}...`)
 
     for (const secret of mockSecrets) {
       const id = uuidv4()
@@ -276,7 +273,7 @@ async function seedDatabase() {
 
       await docClient.send(
         new PutCommand({
-          TableName: SECRETS_TABLE,
+          TableName: awsEnv.secretsTable,
           Item: {
             id,
             content: secret.content,
@@ -294,7 +291,7 @@ async function seedDatabase() {
     }
 
     // Add comments
-    console.log(`Adding ${mockComments.length} comments to ${COMMENTS_TABLE}...`)
+    console.log(`Adding ${mockComments.length} comments to ${awsEnv.commentsTable}...`)
 
     for (const comment of mockComments) {
       const id = uuidv4()
@@ -302,7 +299,7 @@ async function seedDatabase() {
 
       await docClient.send(
         new PutCommand({
-          TableName: COMMENTS_TABLE,
+          TableName: awsEnv.commentsTable,
           Item: {
             id,
             secretId,
@@ -327,7 +324,7 @@ async function seedDatabase() {
       const secretId = secretIds[i]
       const result = await docClient.send(
         new QueryCommand({
-          TableName: COMMENTS_TABLE,
+          TableName: awsEnv.commentsTable,
           IndexName: "SecretIdIndex",
           KeyConditionExpression: "secretId = :secretId",
           ExpressionAttributeValues: {

@@ -1,34 +1,32 @@
 import { NextResponse } from "next/server"
 import { DynamoDBClient, ListTablesCommand, DescribeTableCommand } from "@aws-sdk/client-dynamodb"
+import { getAwsEnvironment, getAwsCredentials } from "@/lib/aws-env"
 
 export async function GET() {
   try {
+    // Get AWS environment variables
+    const awsEnv = getAwsEnvironment()
+
     // Initialize the DynamoDB client
     const client = new DynamoDBClient({
-      region: process.env.AWS_REGION || "us-east-1",
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-      },
+      region: awsEnv.region,
+      credentials: getAwsCredentials(),
     })
-
-    const SECRETS_TABLE = process.env.SECRETS_TABLE || "anonymous-dark-secrets"
-    const COMMENTS_TABLE = process.env.COMMENTS_TABLE || "anonymous-dark-secrets-comments"
 
     // List all tables
     const listTablesResponse = await client.send(new ListTablesCommand({}))
     const allTables = listTablesResponse.TableNames || []
 
     // Check if our tables exist
-    const secretsTableExists = allTables.includes(SECRETS_TABLE)
-    const commentsTableExists = allTables.includes(COMMENTS_TABLE)
+    const secretsTableExists = allTables.includes(awsEnv.secretsTable)
+    const commentsTableExists = allTables.includes(awsEnv.commentsTable)
 
     // Get table details if they exist
     let secretsTableDetails = null
     let commentsTableDetails = null
 
     if (secretsTableExists) {
-      const secretsTableResponse = await client.send(new DescribeTableCommand({ TableName: SECRETS_TABLE }))
+      const secretsTableResponse = await client.send(new DescribeTableCommand({ TableName: awsEnv.secretsTable }))
       secretsTableDetails = {
         status: secretsTableResponse.Table?.TableStatus,
         itemCount: secretsTableResponse.Table?.ItemCount,
@@ -38,7 +36,7 @@ export async function GET() {
     }
 
     if (commentsTableExists) {
-      const commentsTableResponse = await client.send(new DescribeTableCommand({ TableName: COMMENTS_TABLE }))
+      const commentsTableResponse = await client.send(new DescribeTableCommand({ TableName: awsEnv.commentsTable }))
       commentsTableDetails = {
         status: commentsTableResponse.Table?.TableStatus,
         itemCount: commentsTableResponse.Table?.ItemCount,
@@ -49,16 +47,16 @@ export async function GET() {
 
     return NextResponse.json({
       status: "success",
-      awsRegion: process.env.AWS_REGION || "us-east-1",
-      hasCredentials: Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY),
+      awsRegion: awsEnv.region,
+      hasCredentials: awsEnv.hasCredentials,
       allTables,
       secretsTable: {
-        name: SECRETS_TABLE,
+        name: awsEnv.secretsTable,
         exists: secretsTableExists,
         details: secretsTableDetails,
       },
       commentsTable: {
-        name: COMMENTS_TABLE,
+        name: awsEnv.commentsTable,
         exists: commentsTableExists,
         details: commentsTableDetails,
       },

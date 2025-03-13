@@ -1,34 +1,32 @@
 import { NextResponse } from "next/server"
 import { DynamoDBClient, CreateTableCommand, ListTablesCommand } from "@aws-sdk/client-dynamodb"
+import { getAwsEnvironment, getAwsCredentials } from "@/lib/aws-env"
 
 export async function GET() {
   try {
+    // Get AWS environment variables
+    const awsEnv = getAwsEnvironment()
+
     // Initialize the DynamoDB client
     const client = new DynamoDBClient({
-      region: process.env.AWS_REGION || "us-east-1",
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-      },
+      region: awsEnv.region,
+      credentials: getAwsCredentials(),
     })
-
-    const SECRETS_TABLE = process.env.SECRETS_TABLE || "anonymous-dark-secrets"
-    const COMMENTS_TABLE = process.env.COMMENTS_TABLE || "anonymous-dark-secrets-comments"
 
     // List all tables
     const listTablesResponse = await client.send(new ListTablesCommand({}))
     const allTables = listTablesResponse.TableNames || []
 
     const results = {
-      secretsTable: { name: SECRETS_TABLE, created: false, existed: false },
-      commentsTable: { name: COMMENTS_TABLE, created: false, existed: false },
+      secretsTable: { name: awsEnv.secretsTable, created: false, existed: false },
+      commentsTable: { name: awsEnv.commentsTable, created: false, existed: false },
     }
 
     // Create Secrets table if it doesn't exist
-    if (!allTables.includes(SECRETS_TABLE)) {
+    if (!allTables.includes(awsEnv.secretsTable)) {
       await client.send(
         new CreateTableCommand({
-          TableName: SECRETS_TABLE,
+          TableName: awsEnv.secretsTable,
           KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
           AttributeDefinitions: [{ AttributeName: "id", AttributeType: "S" }],
           ProvisionedThroughput: {
@@ -44,10 +42,10 @@ export async function GET() {
     }
 
     // Create Comments table if it doesn't exist
-    if (!allTables.includes(COMMENTS_TABLE)) {
+    if (!allTables.includes(awsEnv.commentsTable)) {
       await client.send(
         new CreateTableCommand({
-          TableName: COMMENTS_TABLE,
+          TableName: awsEnv.commentsTable,
           KeySchema: [
             { AttributeName: "id", KeyType: "HASH" },
             { AttributeName: "secretId", KeyType: "RANGE" },

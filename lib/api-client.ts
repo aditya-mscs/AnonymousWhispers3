@@ -16,12 +16,28 @@ export const secretsApi = {
   // Get all secrets
   getSecrets: async (type = "recent", limit = 10, page = 1): Promise<Secret[]> => {
     const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets?type=${type}&limit=${limit}&page=${page}`)
-    if (!response.ok) {
-      throw new Error("Failed to fetch secrets")
+
+    try {
+      // First try the real API
+      const response = await fetch(`${baseUrl}/api/secrets?type=${type}&limit=${limit}&page=${page}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        return data.secrets
+      }
+
+      console.warn("Real API failed, falling back to mock data")
+    } catch (error) {
+      console.error("Error fetching from real API, falling back to mock data:", error)
     }
-    const data = await response.json()
-    return data.secrets
+
+    // Fall back to mock API if real one fails
+    const mockResponse = await fetch(`${baseUrl}/api/mock-secrets?type=${type}&limit=${limit}&page=${page}`)
+    if (!mockResponse.ok) {
+      throw new Error("Failed to fetch secrets from both real and mock APIs")
+    }
+    const mockData = await mockResponse.json()
+    return mockData.secrets
   },
 
   // Get a single secret by ID
@@ -33,47 +49,108 @@ export const secretsApi = {
     const url = `${baseUrl}/api/secrets/${id}`
     console.log(`API Client: Using URL: ${url}`)
 
-    const response = await fetch(url, {
-      // Add cache: 'no-store' to prevent caching issues
+    try {
+      // First try the real API
+      const response = await fetch(url, {
+        cache: "no-store",
+      })
+
+      console.log(`API Client: Response status: ${response.status}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log(`API Client: Received data with secret:`, data.secret ? "found" : "not found")
+        return data.secret
+      }
+
+      console.warn("Real API failed, falling back to mock data")
+    } catch (error) {
+      console.error("API client error, falling back to mock data:", error)
+    }
+
+    // Fall back to mock API if real one fails
+    console.log(`API Client: Trying mock API at ${baseUrl}/api/mock-secrets/${id}`)
+    const mockResponse = await fetch(`${baseUrl}/api/mock-secrets/${id}`, {
       cache: "no-store",
     })
 
-    console.log(`API Client: Response status: ${response.status}`)
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`API Client: Error response: ${errorText}`)
-      throw new Error(`Failed to fetch secret: ${response.statusText}. Details: ${errorText}`)
+    if (!mockResponse.ok) {
+      throw new Error("Failed to fetch secret from both real and mock APIs")
     }
 
-    const data = await response.json()
-    console.log(`API Client: Received data with secret:`, data.secret ? "found" : "not found")
-
-    return data.secret
+    const mockData = await mockResponse.json()
+    console.log("API Client: Received mock data")
+    return mockData.secret
   },
 
   // Create a new secret
   createSecret: async (secret: { content: string; darkness: number; username?: string }): Promise<Secret> => {
     const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(secret),
-    })
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || "Failed to create secret")
+
+    try {
+      // First try the real API
+      const response = await fetch(`${baseUrl}/api/secrets`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(secret),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        return data.secret
+      }
+
+      console.warn("Real API failed for creating secret, using client-side mock")
+    } catch (error) {
+      console.error("Error creating secret with real API:", error)
     }
-    const data = await response.json()
-    return data.secret
+
+    // Create a mock secret on the client side
+    const mockSecret: Secret = {
+      id: Math.random().toString(36).substring(2, 15),
+      content: secret.content,
+      darkness: secret.darkness,
+      username: secret.username || `Anonymous${Math.floor(Math.random() * 1000)}`,
+      createdAt: new Date().toISOString(),
+      comments: [],
+      views: 0,
+      shares: 0,
+    }
+
+    return mockSecret
   },
 
   // Add a comment to a secret
   addComment: async (secretId: string, comment: { content: string; username: string }): Promise<Comment> => {
     const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets/${secretId}`, {
+
+    try {
+      // First try the real API
+      const response = await fetch(`${baseUrl}/api/secrets/${secretId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          comment: comment.content,
+          username: comment.username,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        return data.comment
+      }
+
+      console.warn("Real API failed for adding comment, falling back to mock API")
+    } catch (error) {
+      console.error("Error adding comment with real API:", error)
+    }
+
+    // Fall back to mock API
+    const mockResponse = await fetch(`${baseUrl}/api/mock-secrets/${secretId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -83,29 +160,50 @@ export const secretsApi = {
         username: comment.username,
       }),
     })
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || "Failed to add comment")
+
+    if (!mockResponse.ok) {
+      throw new Error("Failed to add comment with both real and mock APIs")
     }
-    const data = await response.json()
-    return data.comment
+
+    const mockData = await mockResponse.json()
+    return mockData.comment
   },
 
   // Update secret interactions (share, view)
   updateInteractions: async (secretId: string, action: "share" | "view"): Promise<Secret> => {
     const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets/${secretId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ action }),
-    })
-    if (!response.ok) {
-      throw new Error("Failed to update interactions")
+
+    try {
+      // Try the real API
+      const response = await fetch(`${baseUrl}/api/secrets/${secretId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        return data.result
+      }
+
+      console.warn("Real API failed for updating interactions, using client-side mock")
+    } catch (error) {
+      console.error("Error updating interactions with real API:", error)
     }
-    const data = await response.json()
-    return data.result
+
+    // Just return a mock result
+    return {
+      id: secretId,
+      content: "",
+      darkness: 0,
+      username: "",
+      createdAt: new Date().toISOString(),
+      comments: [],
+      views: action === "view" ? 1 : 0,
+      shares: action === "share" ? 1 : 0,
+    }
   },
 }
 

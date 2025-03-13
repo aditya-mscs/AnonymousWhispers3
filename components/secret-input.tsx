@@ -23,7 +23,6 @@ declare global {
 
 export default function SecretInput() {
   const [content, setContent] = useState("")
-  const [darkness, setDarkness] = useState(0)
   const [isRecording, setIsRecording] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const recognitionRef = useRef<SpeechRecognition | null>(null)
@@ -42,7 +41,6 @@ export default function SecretInput() {
     },
     onSuccess: (data) => {
       setContent("")
-      setDarkness(0)
       setIsSubmitting(false)
 
       // Add to local state
@@ -160,8 +158,8 @@ export default function SecretInput() {
       saveUsernameToStorage(username)
     }
 
-    // Submit the secret
-    mutation.mutate({ content, darkness, username })
+    // Submit the secret with default darkness level of 5
+    mutation.mutate({ content, darkness: 5, username })
   }
 
   return (

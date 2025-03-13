@@ -14,11 +14,31 @@ export default function SecretTabs() {
   const [activeTab, setActiveTab] = useState("recent")
   const dispatch = useAppDispatch()
   const localSecrets = useAppSelector((state) => state.secrets.secrets)
+  const [useMockData, setUseMockData] = useState(false)
 
   // Fetch secrets based on active tab
   const { data, isLoading, error } = useQuery({
-    queryKey: ["secrets", activeTab],
-    queryFn: () => secretsApi.getSecrets(activeTab, 12),
+    queryKey: ["secrets", activeTab, useMockData],
+    queryFn: async () => {
+      try {
+        // First try the real API
+        if (!useMockData) {
+          const data = await secretsApi.getSecrets(activeTab, 12)
+          return data
+        }
+      } catch (error) {
+        console.error("Error fetching from real API, falling back to mock data:", error)
+        setUseMockData(true)
+      }
+
+      // Fall back to mock API if real one fails
+      const response = await fetch(`/api/mock-secrets?type=${activeTab}&limit=12&page=1`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch mock secrets")
+      }
+      const data = await response.json()
+      return data.secrets
+    },
     staleTime: 60000, // 1 minute
   })
 
@@ -41,6 +61,9 @@ export default function SecretTabs() {
     return (
       <div className="text-center py-10">
         <p className="text-destructive">Failed to load secrets. Please try again later.</p>
+        <button onClick={() => setUseMockData(true)} className="mt-4 px-4 py-2 bg-primary text-white rounded-md">
+          Use Mock Data Instead
+        </button>
       </div>
     )
   }
@@ -52,6 +75,12 @@ export default function SecretTabs() {
         <TabsTrigger value="dark">Most Dark</TabsTrigger>
         <TabsTrigger value="trending">Trending</TabsTrigger>
       </TabsList>
+
+      {useMockData && (
+        <div className="mt-2 text-center text-sm text-amber-500 dark:text-amber-400">
+          Using mock data - AWS credentials issue detected
+        </div>
+      )}
 
       <TabsContent value="recent" className="mt-6">
         <SecretsGrid secrets={secrets} isLoading={isLoading} />

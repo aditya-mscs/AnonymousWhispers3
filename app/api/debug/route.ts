@@ -1,29 +1,26 @@
 import { NextResponse } from "next/server"
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb"
-
-// Initialize the DynamoDB client
-const client = new DynamoDBClient({
-  region: process.env.AWS_REGION || "us-east-1",
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-  },
-})
-
-// Create a document client for easier interaction with DynamoDB
-const docClient = DynamoDBDocumentClient.from(client)
-
-// Table names
-const SECRETS_TABLE = process.env.SECRETS_TABLE || "anonymous-dark-secrets"
-const COMMENTS_TABLE = process.env.COMMENTS_TABLE || "anonymous-dark-secrets-comments"
+import { getAwsEnvironment, getAwsCredentials } from "@/lib/aws-env"
 
 export async function GET() {
   try {
+    // Get AWS environment variables
+    const awsEnv = getAwsEnvironment()
+
+    // Initialize the DynamoDB client
+    const client = new DynamoDBClient({
+      region: awsEnv.region,
+      credentials: getAwsCredentials(),
+    })
+
+    // Create a document client for easier interaction with DynamoDB
+    const docClient = DynamoDBDocumentClient.from(client)
+
     // Scan all secrets
     const secretsResult = await docClient.send(
       new ScanCommand({
-        TableName: SECRETS_TABLE,
+        TableName: awsEnv.secretsTable,
         Limit: 100,
       }),
     )
@@ -31,7 +28,7 @@ export async function GET() {
     // Scan all comments
     const commentsResult = await docClient.send(
       new ScanCommand({
-        TableName: COMMENTS_TABLE,
+        TableName: awsEnv.commentsTable,
         Limit: 100,
       }),
     )
@@ -39,10 +36,10 @@ export async function GET() {
     return NextResponse.json({
       status: "success",
       environment: process.env.NODE_ENV,
-      awsRegion: process.env.AWS_REGION,
+      awsRegion: awsEnv.region,
       tables: {
         secrets: {
-          name: SECRETS_TABLE,
+          name: awsEnv.secretsTable,
           count: secretsResult.Items?.length || 0,
           items: secretsResult.Items?.map((item) => ({
             id: item.id,
@@ -53,7 +50,7 @@ export async function GET() {
           })),
         },
         comments: {
-          name: COMMENTS_TABLE,
+          name: awsEnv.commentsTable,
           count: commentsResult.Items?.length || 0,
           items: commentsResult.Items?.map((item) => ({
             id: item.id,

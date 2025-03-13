@@ -1,28 +1,27 @@
 import { NextResponse } from "next/server"
 import { DynamoDBClient, ListTablesCommand } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb"
+import { getAwsEnvironment, getAwsCredentials } from "@/lib/aws-env"
 
 export async function GET() {
   try {
+    // Get AWS environment variables
+    const awsEnv = getAwsEnvironment()
+
     // Initialize the DynamoDB client
     const client = new DynamoDBClient({
-      region: process.env.AWS_REGION || "us-east-1",
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-      },
+      region: awsEnv.region,
+      credentials: getAwsCredentials(),
     })
 
     const docClient = DynamoDBDocumentClient.from(client)
-    const SECRETS_TABLE = process.env.SECRETS_TABLE || "anonymous-dark-secrets"
-    const COMMENTS_TABLE = process.env.COMMENTS_TABLE || "anonymous-dark-secrets-comments"
 
     // Check AWS credentials
     const credentialsCheck = {
-      hasRegion: !!process.env.AWS_REGION,
-      hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-      hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
-      region: process.env.AWS_REGION,
+      hasRegion: !!awsEnv.region,
+      hasAccessKey: !!awsEnv.accessKeyId,
+      hasSecretKey: !!awsEnv.secretAccessKey,
+      region: awsEnv.region,
     }
 
     // List all tables to verify connection
@@ -30,8 +29,8 @@ export async function GET() {
     const allTables = listTablesResponse.TableNames || []
 
     // Check if our tables exist
-    const secretsTableExists = allTables.includes(SECRETS_TABLE)
-    const commentsTableExists = allTables.includes(COMMENTS_TABLE)
+    const secretsTableExists = allTables.includes(awsEnv.secretsTable)
+    const commentsTableExists = allTables.includes(awsEnv.commentsTable)
 
     // Try to scan the secrets table
     let secretsCount = 0
@@ -40,7 +39,7 @@ export async function GET() {
     if (secretsTableExists) {
       const scanResponse = await docClient.send(
         new ScanCommand({
-          TableName: SECRETS_TABLE,
+          TableName: awsEnv.secretsTable,
           Limit: 5, // Just get a few items for the sample
         }),
       )
@@ -52,17 +51,17 @@ export async function GET() {
     // Return comprehensive debug info
     return NextResponse.json({
       environment: process.env.NODE_ENV,
-      baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
+      baseUrl: awsEnv.baseUrl,
       aws: {
         credentials: credentialsCheck,
         tables: {
           all: allTables,
           secretsTable: {
-            name: SECRETS_TABLE,
+            name: awsEnv.secretsTable,
             exists: secretsTableExists,
           },
           commentsTable: {
-            name: COMMENTS_TABLE,
+            name: awsEnv.commentsTable,
             exists: commentsTableExists,
           },
         },
