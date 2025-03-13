@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Button } from "@/components/ui/button"
-import { Menu, X, UserRound, Edit } from "lucide-react"
+import { Menu, X, Edit } from "lucide-react"
 import { useState, useEffect } from "react"
 import { getOrCreateUsername } from "@/lib/storage"
 import { UsernameDialog } from "@/components/username-dialog"
@@ -57,7 +57,7 @@ export default function Header() {
             {username && (
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1 text-sm font-medium px-3 py-1 bg-primary/10 text-primary rounded-full">
-                  <UserRound className="h-3 w-3" />
+                  <div className="w-3 h-3 rounded-full bg-primary"></div>
                   {username}
                 </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsUsernameDialogOpen(true)}>
