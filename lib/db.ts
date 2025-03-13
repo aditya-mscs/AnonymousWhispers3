@@ -3,10 +3,33 @@ import { createHash } from "crypto"
 import { Secret, Comment } from "./db-models"
 import type { Secret as SecretType, Comment as CommentType } from "@/types/secret"
 
+// Mock data for fallback
+const mockSecrets: SecretType[] = [
+  {
+    id: "1",
+    content:
+      "I've been pretending to like my job for 5 years. Everyone thinks I'm passionate about it, but I secretly hate every minute.",
+    darkness: 7,
+    username: "ShadowyGhost42",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+    comments: [
+      {
+        id: "c1",
+        content: "I feel the same way. It's exhausting keeping up the act.",
+        username: "VeiledWhisper99",
+        createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
+      },
+    ],
+    views: 120,
+    shares: 5,
+  },
+  // Add more mock data as needed
+]
+
 // Hash IP address for privacy
 export function hashIp(ip: string): string {
   return createHash("sha256")
-    .update(ip + process.env.IP_HASH_SALT)
+    .update(ip + (process.env.IP_HASH_SALT || "default-salt"))
     .digest("hex")
 }
 
@@ -16,28 +39,51 @@ export async function saveSecret(
 ): Promise<SecretType> {
   const id = uuidv4()
 
-  // Save to DynamoDB
-  await Secret.put({
-    id,
-    content: secretData.content,
-    darkness: secretData.darkness,
-    username: secretData.username,
-    ipHash: secretData.ipHash,
-    createdAt: secretData.createdAt,
-    views: 0,
-    shares: 0,
-  })
+  try {
+    // Save to DynamoDB
+    await Secret.put({
+      id,
+      content: secretData.content,
+      darkness: secretData.darkness,
+      username: secretData.username,
+      ipHash: secretData.ipHash,
+      createdAt: secretData.createdAt instanceof Date ? secretData.createdAt.toISOString() : secretData.createdAt,
+      views: 0,
+      shares: 0,
+    })
 
-  // Return the new secret
-  return {
-    id,
-    content: secretData.content,
-    darkness: secretData.darkness,
-    username: secretData.username,
-    createdAt: secretData.createdAt instanceof Date ? secretData.createdAt.toISOString() : secretData.createdAt,
-    comments: [],
-    views: 0,
-    shares: 0,
+    // Return the new secret
+    return {
+      id,
+      content: secretData.content,
+      darkness: secretData.darkness,
+      username: secretData.username,
+      createdAt: secretData.createdAt instanceof Date ? secretData.createdAt.toISOString() : secretData.createdAt,
+      comments: [],
+      views: 0,
+      shares: 0,
+    }
+  } catch (error) {
+    console.error("Error creating secret:", error)
+
+    // In development, create a mock secret instead
+    if (process.env.NODE_ENV === "development") {
+      console.log("Using mock data instead")
+      const mockSecret: SecretType = {
+        id,
+        content: secretData.content,
+        darkness: secretData.darkness,
+        username: secretData.username,
+        createdAt: secretData.createdAt instanceof Date ? secretData.createdAt.toISOString() : secretData.createdAt,
+        comments: [],
+        views: 0,
+        shares: 0,
+      }
+      mockSecrets.unshift(mockSecret)
+      return mockSecret
+    }
+
+    throw error
   }
 }
 
@@ -48,6 +94,11 @@ export async function getSecretById(id: string): Promise<SecretType | null> {
     const result = await Secret.get({ id })
 
     if (!result.Item) {
+      // Check mock data in development
+      if (process.env.NODE_ENV === "development") {
+        const mockSecret = mockSecrets.find((s) => s.id === id)
+        if (mockSecret) return mockSecret
+      }
       return null
     }
 
@@ -73,6 +124,13 @@ export async function getSecretById(id: string): Promise<SecretType | null> {
     }
   } catch (error) {
     console.error("Error fetching secret:", error)
+
+    // In development, use mock data
+    if (process.env.NODE_ENV === "development") {
+      console.log("Using mock data instead")
+      return mockSecrets.find((s) => s.id === id) || null
+    }
+
     return null
   }
 }
@@ -87,7 +145,6 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
     switch (type) {
       case "dark":
         // Query using the DarknessIndex GSI, sorted in descending order
-        // This is a simplified approach - in a real app, you might need to scan and sort
         const darkResults = await Secret.scan()
         secrets = darkResults.Items || []
         secrets.sort((a, b) => b.darkness - a.darkness)
@@ -95,7 +152,6 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
 
       case "trending":
         // For trending, we need to calculate based on interactions
-        // This is a simplified approach - in a real app, you might have a more sophisticated algorithm
         const trendingResults = await Secret.scan()
         secrets = trendingResults.Items || []
 
@@ -115,7 +171,6 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
 
       default: // recent
         // Query using the CreatedAtIndex GSI, sorted in descending order
-        // This is a simplified approach - in a real app, you might need to scan and sort
         const recentResults = await Secret.scan()
         secrets = recentResults.Items || []
         secrets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -144,6 +199,13 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
     return secretsWithComments
   } catch (error) {
     console.error("Error fetching secrets:", error)
+
+    // In development, use mock data
+    if (process.env.NODE_ENV === "development") {
+      console.log("Using mock data instead")
+      return mockSecrets
+    }
+
     return []
   }
 }
@@ -165,6 +227,14 @@ export async function getCommentsBySecretId(secretId: string): Promise<CommentTy
     }))
   } catch (error) {
     console.error("Error fetching comments:", error)
+
+    // In development, return mock comments
+    if (process.env.NODE_ENV === "development") {
+      console.log("Using mock data instead")
+      const mockSecret = mockSecrets.find((s) => s.id === secretId)
+      return mockSecret?.comments || []
+    }
+
     return []
   }
 }
@@ -179,62 +249,53 @@ export async function addComment(commentData: {
 }): Promise<CommentType> {
   const id = uuidv4()
 
-  // Save to DynamoDB
-  await Comment.put({
-    id,
-    secretId: commentData.secretId,
-    content: commentData.content,
-    username: commentData.username,
-    ipHash: commentData.ipHash,
-    createdAt: commentData.createdAt.toISOString(),
-  })
+  try {
+    // Save to DynamoDB
+    await Comment.put({
+      id,
+      secretId: commentData.secretId,
+      content: commentData.content,
+      username: commentData.username,
+      ipHash: commentData.ipHash,
+      createdAt: commentData.createdAt.toISOString(),
+    })
 
-  // Return the new comment
-  return {
-    id,
-    content: commentData.content,
-    username: commentData.username,
-    createdAt: commentData.createdAt.toISOString(),
+    // Return the new comment
+    return {
+      id,
+      content: commentData.content,
+      username: commentData.username,
+      createdAt: commentData.createdAt.toISOString(),
+    }
+  } catch (error) {
+    console.error("Error creating comment:", error)
+    throw error
   }
 }
 
 // Function to update secret interactions (shares, views)
-export async function updateSecretInteractions(secretId: string, action: string): Promise<SecretType | null> {
+export async function updateSecretInteractions(secretId: string, action: "share" | "view"): Promise<SecretType | null> {
   try {
-    // Get the current secret
-    const result = await Secret.get({ id: secretId })
+    const secret = await getSecretById(secretId)
 
-    if (!result.Item) {
+    if (!secret) {
       return null
     }
 
-    // Update based on action
+    const updates: any = {}
+
     if (action === "share") {
-      await Secret.update({
-        id: secretId,
-        shares: result.Item.shares + 1,
-      })
+      updates.shares = (secret.shares || 0) + 1
     } else if (action === "view") {
-      await Secret.update({
-        id: secretId,
-        views: result.Item.views + 1,
-      })
+      updates.views = (secret.views || 0) + 1
     }
 
-    // Get comments for this secret
-    const comments = await getCommentsBySecretId(secretId)
+    await Secret.update({
+      id: secretId,
+      ...updates,
+    })
 
-    // Return the updated secret
-    return {
-      id: result.Item.id,
-      content: result.Item.content,
-      darkness: result.Item.darkness,
-      username: result.Item.username,
-      createdAt: result.Item.createdAt,
-      comments,
-      views: action === "view" ? result.Item.views + 1 : result.Item.views,
-      shares: action === "share" ? result.Item.shares + 1 : result.Item.shares,
-    }
+    return { ...secret, ...updates }
   } catch (error) {
     console.error("Error updating secret interactions:", error)
     return null

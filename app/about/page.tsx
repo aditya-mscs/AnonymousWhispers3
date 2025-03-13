@@ -40,7 +40,7 @@ export default function AboutPage() {
                 3
               </div>
               <h3 className="font-medium">Connect with Others</h3>
-              <p className="text-sm text-muted-foreground">Read, comment, and share other people&apos;s secrets.</p>
+              <p className="text-sm text-muted-foreground">Read, comment, and share other people's secrets.</p>
             </div>
           </div>
         </CardContent>
@@ -75,8 +75,8 @@ export default function AboutPage() {
             database for technical purposes, we never connect this to personally identifiable information.
           </p>
           <p>
-            Your username is randomly generated and stored only in your browser&apos;s local storage. Voice recordings are
-            never stored - they&apos;re only used to convert to text in real-time.
+            Your username is randomly generated and stored only in your browser's local storage. Voice recordings are
+            never stored - they're only used to convert to text in real-time.
           </p>
           <p>
             We employ strict security measures to ensure your secrets remain anonymous and the platform remains free
@@ -88,7 +88,7 @@ export default function AboutPage() {
       <Card>
         <CardHeader>
           <CardTitle>Future Enhancements</CardTitle>
-          <CardDescription>What&apos;s coming next</CardDescription>
+          <CardDescription>What's coming next</CardDescription>
         </CardHeader>
         <CardContent>
           <ul className="list-disc pl-5 space-y-2">

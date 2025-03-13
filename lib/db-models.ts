@@ -13,6 +13,9 @@ const CommentsTable = new Table({
   name: COMMENTS_TABLE,
   partitionKey: "id",
   sortKey: "secretId",
+  indexes: {
+    SecretIdIndex: { partitionKey: "secretId" },
+  },
   DocumentClient: docClient,
 })
 
@@ -45,54 +48,4 @@ export const Comment = new Entity({
   },
   table: CommentsTable,
 })
-
-// Helper function to create DynamoDB tables (for development)
-export async function createTables() {
-  // This would typically be done through AWS CloudFormation or the AWS Console
-  // This is just for reference
-  const createSecretsTableParams = {
-    TableName: SECRETS_TABLE,
-    KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
-    AttributeDefinitions: [{ AttributeName: "id", AttributeType: "S" }],
-    ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
-    GlobalSecondaryIndexes: [
-      {
-        IndexName: "DarknessIndex",
-        KeySchema: [{ AttributeName: "darkness", KeyType: "HASH" }],
-        Projection: { ProjectionType: "ALL" },
-        ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
-      },
-      {
-        IndexName: "CreatedAtIndex",
-        KeySchema: [{ AttributeName: "createdAt", KeyType: "HASH" }],
-        Projection: { ProjectionType: "ALL" },
-        ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
-      },
-    ],
-  }
-
-  const createCommentsTableParams = {
-    TableName: COMMENTS_TABLE,
-    KeySchema: [
-      { AttributeName: "id", KeyType: "HASH" },
-      { AttributeName: "secretId", KeyType: "RANGE" },
-    ],
-    AttributeDefinitions: [
-      { AttributeName: "id", AttributeType: "S" },
-      { AttributeName: "secretId", AttributeType: "S" },
-    ],
-    ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
-    GlobalSecondaryIndexes: [
-      {
-        IndexName: "SecretIdIndex",
-        KeySchema: [{ AttributeName: "secretId", KeyType: "HASH" }],
-        Projection: { ProjectionType: "ALL" },
-        ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
-      },
-    ],
-  }
-
-  // Code to create tables would go here
-  console.log("Table creation parameters:", createSecretsTableParams, createCommentsTableParams)
-}
 
