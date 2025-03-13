@@ -1,0 +1,169 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "DynamoDB resource stack creation for Anonymous Dark Secrets Comments",
+  "Parameters": {
+    "partitionKeyName": {
+      "Type": "String",
+      "Default": "id"
+    },
+    "partitionKeyType": {
+      "Type": "String",
+      "Default": "S",
+      "AllowedValues": ["S", "N"]
+    },
+    "sortKeyName": {
+      "Type": "String",
+      "Default": "secretId"
+    },
+    "sortKeyType": {
+      "Type": "String",
+      "Default": "S",
+      "AllowedValues": ["S", "N"]
+    },
+    "env": {
+      "Type": "String"
+    },
+    "tableName": {
+      "Type": "String",
+      "Default": "anonymous-dark-secrets-comments"
+    }
+  },
+  "Resources": {
+    "DynamoDBTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": {
+          "Fn::If": [
+            "HasEnvironmentParameter",
+            {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "tableName"
+                  },
+                  {
+                    "Ref": "env"
+                  }
+                ]
+              ]
+            },
+            {
+              "Ref": "tableName"
+            }
+          ]
+        },
+        "KeySchema": [
+          {
+            "AttributeName": {
+              "Ref": "partitionKeyName"
+            },
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": {
+              "Ref": "sortKeyName"
+            },
+            "KeyType": "RANGE"
+          }
+        ],
+        "AttributeDefinitions": [
+          {
+            "AttributeName": {
+              "Ref": "partitionKeyName"
+            },
+            "AttributeType": {
+              "Ref": "partitionKeyType"
+            }
+          },
+          {
+            "AttributeName": {
+              "Ref": "sortKeyName"
+            },
+            "AttributeType": {
+              "Ref": "sortKeyType"
+            }
+          }
+        ],
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "SecretIdIndex",
+            "KeySchema": [
+              {
+                "AttributeName": {
+                  "Ref": "sortKeyName"
+                },
+                "KeyType": "HASH"
+              }
+            ],
+            "Projection": {
+              "ProjectionType": "ALL"
+            },
+            "ProvisionedThroughput": {
+              "ReadCapacityUnits": 5,
+              "WriteCapacityUnits": 5
+            }
+          }
+        ],
+        "BillingMode": "PROVISIONED",
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 5,
+          "WriteCapacityUnits": 5
+        },
+        "StreamSpecification": {
+          "StreamViewType": "NEW_AND_OLD_IMAGES"
+        },
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true
+        }
+      }
+    }
+  },
+  "Conditions": {
+    "HasEnvironmentParameter": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "env"
+            },
+            "NONE"
+          ]
+        }
+      ]
+    }
+  },
+  "Outputs": {
+    "Name": {
+      "Value": {
+        "Ref": "DynamoDBTable"
+      }
+    },
+    "Arn": {
+      "Value": {
+        "Fn::GetAtt": ["DynamoDBTable", "Arn"]
+      }
+    },
+    "StreamArn": {
+      "Value": {
+        "Fn::GetAtt": ["DynamoDBTable", "StreamArn"]
+      }
+    },
+    "PartitionKeyName": {
+      "Value": {
+        "Ref": "partitionKeyName"
+      }
+    },
+    "SortKeyName": {
+      "Value": {
+        "Ref": "sortKeyName"
+      }
+    },
+    "Region": {
+      "Value": {
+        "Ref": "AWS::Region"
+      }
+    }
+  }
+}
+

@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { SecretDialog } from "@/components/secret-dialog"
 import type { Secret } from "@/types/secret"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { getUserRating, saveUserRating } from "@/lib/storage"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { secretsApi } from "@/lib/api-client"
 
 interface SecretCardProps {
   secret: Secret
@@ -24,6 +25,7 @@ export default function SecretCard({ secret }: SecretCardProps) {
   const [tempRating, setTempRating] = useState(0)
   const router = useRouter()
   const { toast } = useToast()
+  const queryClient = useQueryClient()
 
   // Format the date
   const formattedDate = formatDistanceToNow(new Date(secret.createdAt), { addSuffix: true })
@@ -37,14 +39,11 @@ export default function SecretCard({ secret }: SecretCardProps) {
 
   // Handle share button click
   const shareMutation = useMutation({
-    mutationFn: async () => {
-      await fetch(`/api/secrets/${secret.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ action: "share" }),
-      })
+    mutationFn: () => secretsApi.updateInteractions(secret.id, "share"),
+    onSuccess: () => {
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["secrets"] })
+      queryClient.invalidateQueries({ queryKey: ["secret", secret.id] })
     },
   })
 

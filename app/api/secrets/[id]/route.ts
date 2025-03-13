@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSecretById, addComment, updateSecretInteractions } from "@/lib/db"
+import { getSecretById, addComment, updateSecretInteractions, hashIp } from "@/lib/db"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -32,12 +32,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const ip = request.headers.get("x-forwarded-for") || "unknown"
+    const ipHash = hashIp(ip)
 
     const result = await addComment({
       secretId: params.id,
       content: comment,
       username,
-      ipHash: ip,
+      ipHash,
       createdAt: new Date(),
     })
 

@@ -1,12 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { saveSecret, getSecrets } from "@/lib/db"
+import { saveSecret, getSecrets, hashIp } from "@/lib/db"
 import { generateRandomUsername } from "@/lib/utils"
 
 // Schema for validating secret input
 const secretSchema = z.object({
   content: z.string().min(10).max(1000),
-  darkness: z.number().min(1).max(10).int(),
+  darkness: z.number().min(0).max(10).int(),
   username: z.string().optional(),
 })
 
@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Get IP address for user identification (but keep anonymous)
     const ip = request.headers.get("x-forwarded-for") || "unknown"
+    const ipHash = hashIp(ip)
 
     // Generate username if not provided
     const username = result.data.username || generateRandomUsername()
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
       content: result.data.content,
       darkness: result.data.darkness,
       username,
-      ipHash: ip, // In production, you'd hash this for privacy
+      ipHash,
       createdAt: new Date(),
     })
 

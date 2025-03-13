@@ -11,6 +11,7 @@ import { useMutation } from "@tanstack/react-query"
 import { useAppDispatch } from "@/redux/hooks"
 import { addSecret } from "@/redux/features/secrets/secretsSlice"
 import { getUsernameFromStorage, saveUsernameToStorage } from "@/lib/storage"
+import { secretsApi } from "@/lib/api-client"
 
 // Define SpeechRecognition and SpeechRecognitionEvent types
 declare global {
@@ -36,29 +37,16 @@ export default function SecretInput() {
 
   // Create mutation for submitting secrets
   const mutation = useMutation({
-    mutationFn: async (data: { content: string; darkness: number; username: string }) => {
-      const response = await fetch("/api/secrets", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to submit secret")
-      }
-
-      return response.json()
+    mutationFn: (data: { content: string; darkness: number; username: string }) => {
+      return secretsApi.createSecret(data)
     },
     onSuccess: (data) => {
       setContent("")
-      setDarkness(5)
+      setDarkness(0)
       setIsSubmitting(false)
 
       // Add to local state
-      dispatch(addSecret(data.secret))
+      dispatch(addSecret(data))
 
       toast({
         title: "Secret shared successfully",
@@ -66,7 +54,7 @@ export default function SecretInput() {
       })
 
       // Navigate to the secret page
-      router.push(`/secret/${data.secret.id}`)
+      router.push(`/secret/${data.id}`)
     },
     onError: (error: Error) => {
       setIsSubmitting(false)

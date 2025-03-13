@@ -8,6 +8,7 @@ import { setSecrets } from "@/redux/features/secrets/secretsSlice"
 import SecretCard from "@/components/secret-card"
 import type { Secret } from "@/types/secret"
 import { Skeleton } from "@/components/ui/skeleton"
+import { secretsApi } from "@/lib/api-client"
 
 export default function SecretTabs() {
   const [activeTab, setActiveTab] = useState("recent")
@@ -17,20 +18,14 @@ export default function SecretTabs() {
   // Fetch secrets based on active tab
   const { data, isLoading, error } = useQuery({
     queryKey: ["secrets", activeTab],
-    queryFn: async () => {
-      const response = await fetch(`/api/secrets?type=${activeTab}&limit=12`)
-      if (!response.ok) {
-        throw new Error("Failed to fetch secrets")
-      }
-      return response.json()
-    },
+    queryFn: () => secretsApi.getSecrets(activeTab, 12),
     staleTime: 60000, // 1 minute
   })
 
   // Update Redux store when data changes
   useEffect(() => {
-    if (data?.secrets) {
-      dispatch(setSecrets(data.secrets))
+    if (data) {
+      dispatch(setSecrets(data))
     }
   }, [data, dispatch])
 

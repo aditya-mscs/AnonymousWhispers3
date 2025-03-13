@@ -1,120 +1,172 @@
-import type { Secret, Comment } from "@/types/secret"
 import { v4 as uuidv4 } from "uuid"
+import { createHash } from "crypto"
+import { Secret, Comment } from "./db-models"
+import type { Secret as SecretType, Comment as CommentType } from "@/types/secret"
 
-// Mock database for development
-// In production, this would be replaced with actual database calls
-const secrets: Secret[] = [
-  {
-    id: "1",
-    content:
-      "I've been pretending to like my job for 5 years. Everyone thinks I'm passionate about it, but I secretly hate every minute.",
-    darkness: 7,
-    username: "ShadowyGhost42",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-    comments: [
-      {
-        id: "c1",
-        content: "I feel the same way. It's exhausting keeping up the act.",
-        username: "VeiledWhisper99",
-        createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-      },
-    ],
-    views: 120,
-    shares: 5,
-  },
-  {
-    id: "2",
-    content:
-      "I sabotaged my best friend's job interview because I was jealous of their success. They still don't know it was me.",
-    darkness: 9,
-    username: "MysteriousEnigma77",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-    comments: [],
-    views: 85,
-    shares: 2,
-  },
-  {
-    id: "3",
-    content:
-      "I've been living a double life online for years. My family has no idea about my alter ego or the community I'm part of.",
-    darkness: 6,
-    username: "CrypticShade23",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), // 12 hours ago
-    comments: [
-      {
-        id: "c2",
-        content: "I understand this completely. Sometimes the online version feels more real than my actual life.",
-        username: "HiddenSpecter456",
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(), // 6 hours ago
-      },
-      {
-        id: "c3",
-        content: "How do you keep the two lives separate? I'm always afraid of being discovered.",
-        username: "CovertRevenant789",
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
-      },
-    ],
-    views: 210,
-    shares: 15,
-  },
-  // Add more mock secrets as needed
-]
+// Hash IP address for privacy
+export function hashIp(ip: string): string {
+  return createHash("sha256")
+    .update(ip + process.env.IP_HASH_SALT)
+    .digest("hex")
+}
 
 // Function to save a new secret
-export async function saveSecret(secretData: Omit<Secret, "id" | "comments" | "views" | "shares">): Promise<Secret> {
-  const newSecret: Secret = {
-    id: uuidv4(),
-    ...secretData,
+export async function saveSecret(
+  secretData: Omit<SecretType, "id" | "comments" | "views" | "shares">,
+): Promise<SecretType> {
+  const id = uuidv4()
+
+  // Save to DynamoDB
+  await Secret.put({
+    id,
+    content: secretData.content,
+    darkness: secretData.darkness,
+    username: secretData.username,
+    ipHash: secretData.ipHash,
+    createdAt: secretData.createdAt,
+    views: 0,
+    shares: 0,
+  })
+
+  // Return the new secret
+  return {
+    id,
+    content: secretData.content,
+    darkness: secretData.darkness,
+    username: secretData.username,
+    createdAt: secretData.createdAt instanceof Date ? secretData.createdAt.toISOString() : secretData.createdAt,
     comments: [],
     views: 0,
     shares: 0,
   }
-
-  // In production, this would save to a database
-  // For now, we'll just add it to our mock data
-  secrets.unshift(newSecret)
-
-  return newSecret
 }
 
 // Function to get a secret by ID
-export async function getSecretById(id: string): Promise<Secret | null> {
-  const secret = secrets.find((s) => s.id === id)
+export async function getSecretById(id: string): Promise<SecretType | null> {
+  try {
+    // Get the secret from DynamoDB
+    const result = await Secret.get({ id })
 
-  if (!secret) {
+    if (!result.Item) {
+      return null
+    }
+
+    // Increment view count
+    await Secret.update({
+      id,
+      views: result.Item.views + 1,
+    })
+
+    // Get comments for this secret
+    const comments = await getCommentsBySecretId(id)
+
+    // Return the secret with comments
+    return {
+      id: result.Item.id,
+      content: result.Item.content,
+      darkness: result.Item.darkness,
+      username: result.Item.username,
+      createdAt: result.Item.createdAt,
+      comments,
+      views: result.Item.views + 1, // Include the view we just added
+      shares: result.Item.shares,
+    }
+  } catch (error) {
+    console.error("Error fetching secret:", error)
     return null
   }
-
-  // Increment view count
-  secret.views = (secret.views || 0) + 1
-
-  return secret
 }
 
 // Function to get secrets by type (recent, dark, trending)
-export async function getSecrets(type = "recent", limit = 10, page = 1): Promise<Secret[]> {
-  const sortedSecrets = [...secrets]
+export async function getSecrets(type = "recent", limit = 10, page = 1): Promise<SecretType[]> {
+  try {
+    let secrets: any[] = []
+    const offset = (page - 1) * limit
 
-  switch (type) {
-    case "dark":
-      sortedSecrets.sort((a, b) => b.darkness - a.darkness)
-      break
-    case "trending":
-      sortedSecrets.sort((a, b) => {
-        const aInteractions = (a.comments?.length || 0) + (a.shares || 0) + (a.views || 0)
-        const bInteractions = (b.comments?.length || 0) + (b.shares || 0) + (b.views || 0)
-        return bInteractions - aInteractions
-      })
-      break
-    default: // recent
-      sortedSecrets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    // Query DynamoDB based on the type
+    switch (type) {
+      case "dark":
+        // Query using the DarknessIndex GSI, sorted in descending order
+        // This is a simplified approach - in a real app, you might need to scan and sort
+        const darkResults = await Secret.scan()
+        secrets = darkResults.Items || []
+        secrets.sort((a, b) => b.darkness - a.darkness)
+        break
+
+      case "trending":
+        // For trending, we need to calculate based on interactions
+        // This is a simplified approach - in a real app, you might have a more sophisticated algorithm
+        const trendingResults = await Secret.scan()
+        secrets = trendingResults.Items || []
+
+        // Get comments for each secret to calculate trending score
+        for (const secret of secrets) {
+          const comments = await getCommentsBySecretId(secret.id)
+          secret.commentCount = comments.length
+        }
+
+        // Sort by a "trending score" (views + shares + comments)
+        secrets.sort((a, b) => {
+          const aScore = (a.views || 0) + (a.shares || 0) + (a.commentCount || 0)
+          const bScore = (b.views || 0) + (b.shares || 0) + (b.commentCount || 0)
+          return bScore - aScore
+        })
+        break
+
+      default: // recent
+        // Query using the CreatedAtIndex GSI, sorted in descending order
+        // This is a simplified approach - in a real app, you might need to scan and sort
+        const recentResults = await Secret.scan()
+        secrets = recentResults.Items || []
+        secrets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    }
+
+    // Apply pagination
+    secrets = secrets.slice(offset, offset + limit)
+
+    // Get comments for each secret
+    const secretsWithComments = await Promise.all(
+      secrets.map(async (secret) => {
+        const comments = await getCommentsBySecretId(secret.id)
+        return {
+          id: secret.id,
+          content: secret.content,
+          darkness: secret.darkness,
+          username: secret.username,
+          createdAt: secret.createdAt,
+          comments,
+          views: secret.views,
+          shares: secret.shares,
+        }
+      }),
+    )
+
+    return secretsWithComments
+  } catch (error) {
+    console.error("Error fetching secrets:", error)
+    return []
   }
+}
 
-  // Apply pagination
-  const start = (page - 1) * limit
-  const end = start + limit
+// Function to get comments by secret ID
+export async function getCommentsBySecretId(secretId: string): Promise<CommentType[]> {
+  try {
+    // Query using the SecretIdIndex GSI
+    const result = await Comment.query(secretId, {
+      index: "SecretIdIndex",
+      reverse: false, // Sort in ascending order by creation time
+    })
 
-  return sortedSecrets.slice(start, end)
+    return (result.Items || []).map((item: any) => ({
+      id: item.id,
+      content: item.content,
+      username: item.username,
+      createdAt: item.createdAt,
+    }))
+  } catch (error) {
+    console.error("Error fetching comments:", error)
+    return []
+  }
 }
 
 // Function to add a comment to a secret
@@ -124,43 +176,68 @@ export async function addComment(commentData: {
   username: string
   ipHash: string
   createdAt: Date
-}): Promise<Comment> {
-  const { secretId, ...commentInfo } = commentData
+}): Promise<CommentType> {
+  const id = uuidv4()
 
-  const secret = await getSecretById(secretId)
-  if (!secret) {
-    throw new Error("Secret not found")
+  // Save to DynamoDB
+  await Comment.put({
+    id,
+    secretId: commentData.secretId,
+    content: commentData.content,
+    username: commentData.username,
+    ipHash: commentData.ipHash,
+    createdAt: commentData.createdAt.toISOString(),
+  })
+
+  // Return the new comment
+  return {
+    id,
+    content: commentData.content,
+    username: commentData.username,
+    createdAt: commentData.createdAt.toISOString(),
   }
-
-  const newComment: Comment = {
-    id: uuidv4(),
-    ...commentInfo,
-    createdAt: commentInfo.createdAt.toISOString(),
-  }
-
-  // Add comment to the secret
-  if (!secret.comments) {
-    secret.comments = []
-  }
-
-  secret.comments.push(newComment)
-
-  return newComment
 }
 
 // Function to update secret interactions (shares, views)
-export async function updateSecretInteractions(secretId: string, action: string): Promise<Secret> {
-  const secret = await getSecretById(secretId)
-  if (!secret) {
-    throw new Error("Secret not found")
-  }
+export async function updateSecretInteractions(secretId: string, action: string): Promise<SecretType | null> {
+  try {
+    // Get the current secret
+    const result = await Secret.get({ id: secretId })
 
-  if (action === "share") {
-    secret.shares = (secret.shares || 0) + 1
-  } else if (action === "view") {
-    secret.views = (secret.views || 0) + 1
-  }
+    if (!result.Item) {
+      return null
+    }
 
-  return secret
+    // Update based on action
+    if (action === "share") {
+      await Secret.update({
+        id: secretId,
+        shares: result.Item.shares + 1,
+      })
+    } else if (action === "view") {
+      await Secret.update({
+        id: secretId,
+        views: result.Item.views + 1,
+      })
+    }
+
+    // Get comments for this secret
+    const comments = await getCommentsBySecretId(secretId)
+
+    // Return the updated secret
+    return {
+      id: result.Item.id,
+      content: result.Item.content,
+      darkness: result.Item.darkness,
+      username: result.Item.username,
+      createdAt: result.Item.createdAt,
+      comments,
+      views: action === "view" ? result.Item.views + 1 : result.Item.views,
+      shares: action === "share" ? result.Item.shares + 1 : result.Item.shares,
+    }
+  } catch (error) {
+    console.error("Error updating secret interactions:", error)
+    return null
+  }
 }
 

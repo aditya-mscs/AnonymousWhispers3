@@ -1,0 +1,58 @@
+{
+  "api": {
+    "anonymousDarkSecrets": {
+      "service": "AppSync",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [],
+      "output": {
+        "authConfig": {
+          "defaultAuthentication": {
+            "authenticationType": "API_KEY",
+            "apiKeyConfig": {
+              "apiKeyExpirationDays": 7,
+              "description": "Anonymous Dark Secrets API Key"
+            }
+          },
+          "additionalAuthenticationProviders": []
+        }
+      }
+    }
+  },
+  "function": {
+    "secretsFunction": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda",
+      "dependsOn": [
+        {
+          "category": "storage",
+          "resourceName": "secretsTable",
+          "attributes": ["Name", "Arn"]
+        },
+        {
+          "category": "storage",
+          "resourceName": "commentsTable",
+          "attributes": ["Name", "Arn"]
+        }
+      ]
+    }
+  },
+  "storage": {
+    "secretsTable": {
+      "service": "DynamoDB",
+      "providerPlugin": "awscloudformation"
+    },
+    "commentsTable": {
+      "service": "DynamoDB",
+      "providerPlugin": "awscloudformation"
+    }
+  },
+  "hosting": {
+    "amplifyhosting": {
+      "service": "amplifyhosting",
+      "type": "cicd",
+      "lastPushTimeStamp": "2023-03-13T00:00:00.000Z"
+    }
+  }
+}
+
