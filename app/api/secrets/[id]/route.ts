@@ -3,16 +3,31 @@ import { getSecretById, addComment, updateSecretInteractions, hashIp } from "@/l
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    console.log("API route: Fetching secret with ID:", params.id)
+
+    // Add more detailed logging
+    console.log("API route: About to call getSecretById")
     const secret = await getSecretById(params.id)
+    console.log("API route: DB response:", secret ? "Secret found" : "Secret not found")
 
     if (!secret) {
-      return NextResponse.json({ error: "Secret not found" }, { status: 404 })
+      console.log("API route: Secret not found")
+      return NextResponse.json({ error: "Secret not found", id: params.id }, { status: 404 })
     }
 
+    console.log("API route: Secret found, returning data")
     return NextResponse.json({ secret })
   } catch (error) {
     console.error("Error fetching secret:", error)
-    return NextResponse.json({ error: "Failed to fetch secret" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Failed to fetch secret",
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+        id: params.id,
+      },
+      { status: 500 },
+    )
   }
 }
 
