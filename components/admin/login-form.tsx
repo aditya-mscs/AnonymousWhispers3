@@ -34,7 +34,7 @@ export function AdminLoginForm() {
           message: "Login successful!",
           type: "success",
         })
-        router.push("/admin/dashboard")
+        router.push("/adminportal/dashboard")
         router.refresh()
       } else {
         const data = await response.json()
