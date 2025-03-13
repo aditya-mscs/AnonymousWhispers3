@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { secretsApi } from "@/lib/api-client"
 
 export default function SecretTabs() {
-  const [activeTab, setActiveTab] = useState("recent")
+  const [activeTab, setActiveTab] = useState("trending")
   const dispatch = useAppDispatch()
   const localSecrets = useAppSelector((state) => state.secrets.secrets)
   const [useMockData, setUseMockData] = useState(false)
@@ -68,12 +68,39 @@ export default function SecretTabs() {
     )
   }
 
+  // Sort secrets based on the active tab
+  const getSortedSecrets = (tab: string, secretsToSort: Secret[]) => {
+    const sortedSecrets = [...secretsToSort]
+
+    switch (tab) {
+      case "dark":
+        // Sort by darkness level in descending order (darkest first)
+        return sortedSecrets.sort((a, b) => b.darkness - a.darkness)
+
+      case "recent":
+        // Sort by creation date in descending order (newest first)
+        return sortedSecrets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+      case "trending":
+        // Sort by a "trending score" that includes darkness level
+        return sortedSecrets.sort((a, b) => {
+          // Calculate trending score: (views + shares*2 + comments*3) * (darkness/5)
+          const aScore = ((a.views || 0) + (a.shares || 0) * 2 + (a.comments?.length || 0) * 3) * (a.darkness / 5)
+          const bScore = ((b.views || 0) + (b.shares || 0) * 2 + (b.comments?.length || 0) * 3) * (b.darkness / 5)
+          return bScore - aScore // Descending order
+        })
+
+      default:
+        return sortedSecrets
+    }
+  }
+
   return (
-    <Tabs defaultValue="recent" value={activeTab} onValueChange={handleTabChange}>
+    <Tabs defaultValue="trending" value={activeTab} onValueChange={handleTabChange}>
       <TabsList className="w-full max-w-md mx-auto grid grid-cols-3">
+        <TabsTrigger value="trending">Trending</TabsTrigger>
         <TabsTrigger value="recent">Most Recent</TabsTrigger>
         <TabsTrigger value="dark">Most Dark</TabsTrigger>
-        <TabsTrigger value="trending">Trending</TabsTrigger>
       </TabsList>
 
       {useMockData && (
@@ -82,19 +109,16 @@ export default function SecretTabs() {
         </div>
       )}
 
+      <TabsContent value="trending" className="mt-6">
+        <SecretsGrid secrets={getSortedSecrets("trending", secrets)} isLoading={isLoading} />
+      </TabsContent>
+
       <TabsContent value="recent" className="mt-6">
-        <SecretsGrid secrets={secrets} isLoading={isLoading} />
+        <SecretsGrid secrets={getSortedSecrets("recent", secrets)} isLoading={isLoading} />
       </TabsContent>
 
       <TabsContent value="dark" className="mt-6">
-        <SecretsGrid secrets={secrets.sort((a, b) => b.darkness - a.darkness)} isLoading={isLoading} />
-      </TabsContent>
-
-      <TabsContent value="trending" className="mt-6">
-        <SecretsGrid
-          secrets={secrets.sort((a, b) => (b.comments?.length || 0) - (a.comments?.length || 0))}
-          isLoading={isLoading}
-        />
+        <SecretsGrid secrets={getSortedSecrets("dark", secrets)} isLoading={isLoading} />
       </TabsContent>
     </Tabs>
   )

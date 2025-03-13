@@ -54,9 +54,14 @@ export async function GET(request: Request) {
     if (type === "dark") {
       secrets.sort((a, b) => b.darkness - a.darkness)
     } else if (type === "trending") {
-      secrets.sort((a, b) => b.views + b.shares - (a.views + a.shares))
+      // Calculate trending score: (views + shares*2 + comments*3) * (darkness/5)
+      secrets.sort((a, b) => {
+        const aScore = ((a.views || 0) + (a.shares || 0) * 2 + (a.comments?.length || 0) * 3) * (a.darkness / 5)
+        const bScore = ((b.views || 0) + (b.shares || 0) * 2 + (b.comments?.length || 0) * 3) * (b.darkness / 5)
+        return bScore - aScore // Descending order
+      })
     } else {
-      // recent
+      // recent - sort by creation date in descending order (newest first)
       secrets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     }
 

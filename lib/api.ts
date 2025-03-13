@@ -147,9 +147,10 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
       break
     case "trending":
       sortedSecrets.sort((a, b) => {
-        const aInteractions = (a.comments?.length || 0) + (a.shares || 0) + (a.views || 0)
-        const bInteractions = (b.comments?.length || 0) + (b.shares || 0) + (b.views || 0)
-        return bInteractions - aInteractions
+        // Calculate trending score: (views + shares*2 + comments*3) * (darkness/5)
+        const aScore = ((a.views || 0) + (a.shares || 0) * 2 + (a.comments?.length || 0) * 3) * (a.darkness / 5)
+        const bScore = ((b.views || 0) + (b.shares || 0) * 2 + (b.comments?.length || 0) * 3) * (b.darkness / 5)
+        return bScore - aScore // Descending order
       })
       break
     default: // recent

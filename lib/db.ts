@@ -156,11 +156,12 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
         const darkResults = await Secret.scan()
         secrets = darkResults.Items || []
         console.log(`DB: Found ${secrets.length} secrets before sorting/pagination`)
+        // Sort by darkness level in descending order (darkest first)
         secrets.sort((a, b) => b.darkness - a.darkness)
         break
 
       case "trending":
-        // For trending, we need to calculate based on interactions
+        // For trending, we need to calculate based on interactions and darkness
         console.log("DB: Fetching trending secrets")
         const trendingResults = await Secret.scan()
         secrets = trendingResults.Items || []
@@ -172,11 +173,13 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
           secret.commentCount = comments.length
         }
 
-        // Sort by a "trending score" (views + shares + comments)
+        // Sort by a "trending score" that includes darkness level
         secrets.sort((a, b) => {
-          const aScore = (a.views || 0) + (a.shares || 0) + (a.commentCount || 0)
-          const bScore = (b.views || 0) + (b.shares || 0) + (b.commentCount || 0)
-          return bScore - aScore
+          // Calculate trending score: (views + shares*2 + comments*3) * (darkness/5)
+          // This gives more weight to comments and shares, and boosts darker secrets
+          const aScore = ((a.views || 0) + (a.shares || 0) * 2 + (a.commentCount || 0) * 3) * (a.darkness / 5)
+          const bScore = ((b.views || 0) + (b.shares || 0) * 2 + (b.commentCount || 0) * 3) * (b.darkness / 5)
+          return bScore - aScore // Descending order
         })
         break
 
@@ -186,6 +189,7 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
         const recentResults = await Secret.scan()
         secrets = recentResults.Items || []
         console.log(`DB: Found ${secrets.length} secrets before sorting/pagination`)
+        // Sort by creation date in descending order (newest first)
         secrets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     }
 
