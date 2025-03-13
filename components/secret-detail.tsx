@@ -11,7 +11,7 @@ import type { Secret } from "@/types/secret"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 import { getUsernameFromStorage, getUserRating, saveUserRating } from "@/lib/storage"
-import { cn } from "@/lib/utils"
+import { getDarknessTextColor } from "@/lib/utils"
 
 interface SecretDetailProps {
   secret: Secret
@@ -110,14 +110,6 @@ export function SecretDetail({ secret }: SecretDetailProps) {
     })
   }
 
-  // Get color based on rating
-  const getSliderColor = (rating: number) => {
-    if (rating >= 8) return "bg-red-500"
-    if (rating >= 5) return "bg-amber-500"
-    if (rating > 0) return "bg-green-500"
-    return "bg-gray-300 dark:bg-gray-600"
-  }
-
   // Handle share button click
   const handleShare = async () => {
     try {
@@ -168,7 +160,7 @@ export function SecretDetail({ secret }: SecretDetailProps) {
               <div className="font-medium">{secret.username}</div>
               <div className="text-sm text-muted-foreground">{formattedDate}</div>
             </div>
-            <div className="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">
+            <div className={`px-3 py-1 ${getDarknessTextColor(secret.darkness)} bg-primary/10 text-sm rounded-full`}>
               Darkness: {secret.darkness}/10
             </div>
           </div>
@@ -189,14 +181,9 @@ export function SecretDetail({ secret }: SecretDetailProps) {
               onValueChange={handleRatingChange} // Visual update only
               onValueCommit={handleRatingChangeEnd} // Save only when finished
               className="w-full"
+              colorByValue={true}
             />
             {/* Color bar that changes based on rating value */}
-            <div className={cn("h-2 w-full rounded-full overflow-hidden mt-1", "bg-gray-200 dark:bg-gray-700")}>
-              <div
-                className={cn("h-full transition-all duration-200", getSliderColor(tempRating))}
-                style={{ width: `${tempRating * 10}%` }}
-              />
-            </div>
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>Mild</span>
               <span>Moderate</span>
@@ -224,8 +211,8 @@ export function SecretDetail({ secret }: SecretDetailProps) {
             className="resize-none"
           />
           <div className="flex justify-end">
-            <Button onClick={handleCommentSubmit} disabled={comment.trim().length < 3 || commentMutation.isLoading}>
-              {commentMutation.isLoading ? "Posting..." : "Post Comment"}
+            <Button onClick={handleCommentSubmit} disabled={comment.trim().length < 3 || commentMutation.isPending}>
+              {commentMutation.isPending ? "Posting..." : "Post Comment"}
             </Button>
           </div>
 

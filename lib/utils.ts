@@ -63,3 +63,19 @@ export function formatDate(dateString: string): string {
   }).format(date)
 }
 
+// Get text color class based on darkness rating
+export function getDarknessTextColor(rating: number): string {
+  if (rating >= 8) return "text-red-500"
+  if (rating >= 5) return "text-amber-500"
+  if (rating > 0) return "text-green-500"
+  return "text-primary"
+}
+
+// Get background color class based on darkness rating
+export function getDarknessBackgroundColor(rating: number): string {
+  if (rating >= 8) return "bg-red-500"
+  if (rating >= 5) return "bg-amber-500"
+  if (rating > 0) return "bg-green-500"
+  return "bg-slate-400 dark:bg-slate-600"
+}
+

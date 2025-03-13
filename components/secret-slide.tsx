@@ -12,7 +12,7 @@ import type { Secret } from "@/types/secret"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 import { getUsernameFromStorage } from "@/lib/storage"
-import { cn } from "@/lib/utils"
+import { getDarknessTextColor } from "@/lib/utils"
 
 interface SecretSlideProps {
   secret: Secret
@@ -140,14 +140,6 @@ export function SecretSlide({
     onRatingChange(value)
   }
 
-  // Get color based on rating
-  const getSliderColor = (rating: number) => {
-    if (rating >= 8) return "bg-red-500"
-    if (rating >= 5) return "bg-amber-500"
-    if (rating > 0) return "bg-green-500"
-    return "bg-gray-300 dark:bg-gray-600"
-  }
-
   // Sort comments by time (newest first)
   const sortedComments = secret.comments
     ? [...secret.comments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -157,7 +149,7 @@ export function SecretSlide({
     <SlidePanel open={open} onClose={() => onOpenChange(false)} title={`Secret from ${secret.username}`}>
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <div className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+          <div className={`px-2 py-1 ${getDarknessTextColor(secret.darkness)} bg-primary/10 text-xs rounded-full`}>
             Darkness: {secret.darkness}/10
           </div>
           <div className="text-xs text-muted-foreground">{formattedDate}</div>
@@ -180,14 +172,8 @@ export function SecretSlide({
             onValueChange={handleLocalRatingChange} // Visual update only
             onValueCommit={onRatingChangeEnd} // Save only when finished
             className="w-full"
+            colorByValue={true}
           />
-          {/* Color bar that changes based on rating value */}
-          <div className={cn("h-1.5 w-full rounded-full overflow-hidden mt-1", "bg-gray-200 dark:bg-gray-700")}>
-            <div
-              className={cn("h-full transition-all duration-200", getSliderColor(tempRating))}
-              style={{ width: `${tempRating * 10}%` }}
-            />
-          </div>
         </div>
 
         <div className="space-y-2">

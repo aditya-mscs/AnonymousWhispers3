@@ -58,3 +58,25 @@
   }
 }
 
+@layer utilities {
+  .range-primary {
+    @apply bg-primary;
+  }
+
+  .range-red-500 {
+    @apply bg-red-500;
+  }
+
+  .range-amber-500 {
+    @apply bg-amber-500;
+  }
+
+  .range-green-500 {
+    @apply bg-green-500;
+  }
+
+  .range-slate-400 {
+    @apply bg-slate-400 dark:bg-slate-600;
+  }
+}
+

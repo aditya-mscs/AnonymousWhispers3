@@ -265,6 +265,11 @@ export default function SecretInput() {
     })
   }
 
+  // Get color for CAPTCHA slider
+  const getCaptchaSliderColor = () => {
+    return Math.abs(sliderValue[0] - targetValue.current) <= 2 ? "bg-green-500" : "bg-primary"
+  }
+
   return (
     <Card className="w-full">
       <CardContent className="pt-6">
@@ -290,22 +295,20 @@ export default function SecretInput() {
               </div>
 
               <div className="space-y-2">
-                <Slider value={sliderValue} min={0} max={100} step={1} onValueChange={handleSliderChange} />
+                <Slider
+                  value={sliderValue}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onValueChange={handleSliderChange}
+                  className="w-full"
+                  colorByValue={Math.abs(sliderValue[0] - targetValue.current) <= 2}
+                />
 
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>0</span>
                   <span>Current: {sliderValue[0]}</span>
                   <span>100</span>
-                </div>
-
-                {/* Progress bar showing how close the user is to the target */}
-                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-200 ${
-                      Math.abs(sliderValue[0] - targetValue.current) <= 2 ? "bg-green-500" : "bg-primary/50"
-                    }`}
-                    style={{ width: `${sliderValue[0]}%` }}
-                  />
                 </div>
               </div>
             </div>

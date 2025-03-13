@@ -12,9 +12,9 @@ import type { Secret } from "@/types/secret"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { getUserRating, saveUserRating } from "@/lib/storage"
 import { useToast } from "@/hooks/use-toast"
-import { cn } from "@/lib/utils"
 import { secretsApi } from "@/lib/api-client"
 import { SuperToast } from "@/components/super-toast"
+import { getDarknessTextColor } from "@/lib/utils"
 
 interface SecretCardProps {
   secret: Secret
@@ -99,14 +99,6 @@ export default function SecretCard({ secret }: SecretCardProps) {
     })
   }
 
-  // Get color based on rating
-  const getSliderColor = (rating: number) => {
-    if (rating >= 8) return "bg-red-500"
-    if (rating >= 5) return "bg-amber-500"
-    if (rating > 0) return "bg-green-500"
-    return "bg-gray-300 dark:bg-gray-600"
-  }
-
   return (
     <>
       <Card className="h-full flex flex-col">
@@ -115,7 +107,7 @@ export default function SecretCard({ secret }: SecretCardProps) {
             <div className="font-medium text-sm">{secret.username}</div>
             <div className="text-xs text-muted-foreground">{formattedDate}</div>
           </div>
-          <div className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+          <div className={`px-2 py-1 ${getDarknessTextColor(secret.darkness)} bg-primary/10 text-xs rounded-full`}>
             Darkness: {secret.darkness}/10
           </div>
         </CardHeader>
@@ -136,14 +128,8 @@ export default function SecretCard({ secret }: SecretCardProps) {
               onValueChange={handleRatingChange} // Visual update only
               onValueCommit={handleRatingChangeEnd} // Save only when finished
               className="w-full"
+              colorByValue={true}
             />
-            {/* Color bar that changes based on rating value */}
-            <div className={cn("h-1.5 w-full rounded-full overflow-hidden mt-1", "bg-gray-200 dark:bg-gray-700")}>
-              <div
-                className={cn("h-full transition-all duration-200", getSliderColor(tempRating))}
-                style={{ width: `${tempRating * 10}%` }}
-              />
-            </div>
           </div>
           <div className="flex justify-between w-full">
             <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={handleContentClick}>
