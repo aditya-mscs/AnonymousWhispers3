@@ -6,6 +6,7 @@ frontend:
         - npm ci
     build:
       commands:
+        - env | grep -e AWS_REGION -e SECRETS_TABLE -e COMMENTS_TABLE -e IP_HASH_SALT >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next

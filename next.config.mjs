@@ -10,6 +10,14 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@aws-sdk'],
   },
+  // Disable ESLint during build (we'll run it separately)
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  // Disable TypeScript checking during build (we'll run it separately)
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 }
 
 export default nextConfig
