@@ -11,7 +11,9 @@ import { SECRETS_TABLE, COMMENTS_TABLE } from "./db-models"
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123" // Fallback for development only
 const ADMIN_URL = "/adminportal" // Static URL for admin portal
 
-// Session management
+/**
+ * Sets the admin session cookie
+ */
 export function setAdminSession() {
   const cookieStore = cookies()
   cookieStore.set("admin_session", "true", {
@@ -22,34 +24,51 @@ export function setAdminSession() {
   })
 }
 
+/**
+ * Clears the admin session cookie
+ */
 export function clearAdminSession() {
   const cookieStore = cookies()
   cookieStore.delete("admin_session")
 }
 
+/**
+ * Checks if the admin session cookie exists
+ */
 export function checkAdminSession() {
   const cookieStore = cookies()
   return cookieStore.has("admin_session")
 }
 
+/**
+ * Middleware to require admin authentication
+ * Redirects to login page if not authenticated
+ */
 export function requireAdmin() {
   if (!checkAdminSession()) {
     redirect("/adminportal")
   }
 }
 
-// Admin authentication
+/**
+ * Verifies the admin password
+ * @param password The password to verify
+ */
 export function verifyAdminPassword(password: string) {
   return password === ADMIN_PASSWORD
 }
 
-// Add a function to get the admin URL
+/**
+ * Gets the admin URL
+ */
 export function getAdminUrl() {
   return ADMIN_URL
 }
 
-// Admin data operations
-// Update the getAdminStats function to include reported secrets count
+/**
+ * Gets admin dashboard statistics
+ * Includes counts of secrets, comments, high darkness secrets, and reported content
+ */
 export async function getAdminStats() {
   try {
     // Get AWS environment variables
@@ -129,7 +148,12 @@ export async function getAdminStats() {
   }
 }
 
-// Get all secrets with pagination and filtering
+/**
+ * Gets all secrets with pagination and filtering for admin view
+ * @param page Page number
+ * @param limit Number of items per page
+ * @param filter Optional filter criteria
+ */
 export async function getAdminSecrets(page = 1, limit = 10, filter?: { field: string; value: string | number }) {
   try {
     // Get all secrets
@@ -175,7 +199,10 @@ export async function getAdminSecrets(page = 1, limit = 10, filter?: { field: st
   }
 }
 
-// Delete a secret
+/**
+ * Deletes a secret and its associated comments
+ * @param id Secret ID to delete
+ */
 export async function deleteSecret(id: string) {
   try {
     // Get AWS environment variables
@@ -229,7 +256,11 @@ export async function deleteSecret(id: string) {
   }
 }
 
-// Delete a comment
+/**
+ * Deletes a comment
+ * @param id Comment ID to delete
+ * @param secretId Associated secret ID
+ */
 export async function deleteComment(id: string, secretId: string) {
   try {
     // Get AWS environment variables
@@ -261,7 +292,9 @@ export async function deleteComment(id: string, secretId: string) {
   }
 }
 
-// Add the getReportedSecrets function
+/**
+ * Gets all reported secrets for admin review
+ */
 export async function getReportedSecrets() {
   try {
     // Get AWS environment variables

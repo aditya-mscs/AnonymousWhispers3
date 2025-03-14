@@ -164,3 +164,8 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
   return sortedSecrets.slice(start, end)
 }
 
+export const secretsApi = {
+  getSecretById,
+  getSecrets,
+}
+

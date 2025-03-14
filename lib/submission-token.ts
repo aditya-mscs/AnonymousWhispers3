@@ -1,7 +1,3 @@
-/**
- * Generates a time-based submission token that expires after a certain period
- * This is a simple implementation - in production you might use JWT or similar
- */
 export function generateSubmissionToken(): string {
   const timestamp = Date.now()
   const randomPart = Math.random().toString(36).substring(2, 10)

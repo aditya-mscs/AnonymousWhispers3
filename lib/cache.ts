@@ -1,4 +1,3 @@
-// Simple in-memory cache for frequently accessed data
 const cache = new Map<string, { data: any; timestamp: number }>()
 const DEFAULT_TTL = 60 * 1000 // 1 minute
 
