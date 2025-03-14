@@ -54,7 +54,7 @@ export function SecretManagement({ initialSecrets }: SecretManagementProps) {
         params.append("filterValue", value)
       }
 
-      const response = await fetch(`/api/admin/secrets?${params.toString()}`)
+      const response = await fetch(`/api/adminportal/secrets?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
         setSecrets(data.secrets)
@@ -83,7 +83,7 @@ export function SecretManagement({ initialSecrets }: SecretManagementProps) {
 
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/admin/secrets/${id}`, {
+      const response = await fetch(`/api/adminportal/secrets/${id}`, {
         method: "DELETE",
       })
 

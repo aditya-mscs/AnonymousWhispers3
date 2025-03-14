@@ -308,7 +308,7 @@ export const secretsApi = {
 
     try {
       // Try the real API
-      const response = await fetch(`${baseUrl}/api/admin/reports`)
+      const response = await fetch(`${baseUrl}/api/adminportal/reports`)
 
       if (response.ok) {
         const data = await response.json()

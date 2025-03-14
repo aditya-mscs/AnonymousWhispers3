@@ -1,3 +1,4 @@
+// Simple error logging utility
 export function logError(error: Error, context: Record<string, any> = {}) {
   console.error("Application error:", {
     message: error.message,

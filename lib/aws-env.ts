@@ -1,3 +1,8 @@
+/**
+ * Centralized utility for accessing AWS environment variables
+ * Only uses MY_AWS_* variables to avoid Amplify restrictions
+ */
+
 export interface AwsEnvironment {
   // AWS credentials and region
   region: string

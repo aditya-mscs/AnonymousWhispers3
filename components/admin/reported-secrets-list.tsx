@@ -26,7 +26,7 @@ export default function ReportedSecretsList({ initialReportedSecrets }: Reported
 
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/admin/secrets/${secretId}`, {
+      const response = await fetch(`/api/adminportal/secrets/${secretId}`, {
         method: "DELETE",
       })
 

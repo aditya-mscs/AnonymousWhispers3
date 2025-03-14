@@ -1,3 +1,7 @@
+// This file is for reference only as we're using Next.js App Router
+// which handles routing differently. This would be used if we were
+// using React Router directly.
+
 export const routes = [
   {
     path: "/",

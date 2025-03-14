@@ -1,3 +1,4 @@
+#!/bin/bash
 # Custom build script for Amplify
 
 # Print environment for debugging (excluding secrets)
