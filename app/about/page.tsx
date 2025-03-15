@@ -4,7 +4,7 @@ export default function AboutPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <section>
-        <h1 className="text-4xl font-bold mb-4">About Anonymous Dark Secrets</h1>
+        <h1 className="text-4xl font-bold mb-4">About Anonymous Whispers 🤫</h1>
         <p className="text-lg text-muted-foreground">
           A safe space for sharing your deepest thoughts without judgment or identification.
         </p>

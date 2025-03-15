@@ -4,8 +4,14 @@ import { useState, useEffect } from "react"
 import { X } from "lucide-react"
 import { createPortal } from "react-dom"
 
+/**
+ * Types of toast notifications
+ */
 export type ToastType = "success" | "error" | "info" | "warning"
 
+/**
+ * Props for creating a toast notification
+ */
 export interface ToastProps {
   message: string
   type?: ToastType
@@ -13,23 +19,35 @@ export interface ToastProps {
   onClose?: () => void
 }
 
+/**
+ * Internal state for a toast notification
+ */
 export interface ToastState extends ToastProps {
   id: string
 }
 
-// Global state for toasts
+// Global state for toasts - simplified implementation
 let toasts: ToastState[] = []
 let listeners: Array<(toasts: ToastState[]) => void> = []
 
-// Function to notify all listeners of state changes
+/**
+ * Notifies all listeners of state changes
+ */
 function notifyListeners() {
   listeners.forEach((listener) => listener([...toasts]))
 }
 
-// Toast management functions
+/**
+ * Toast notification system
+ * Provides methods to show, dismiss, and manage toast notifications
+ */
 export const SuperToast = {
+  /**
+   * Shows a toast notification
+   * @param props Toast properties
+   * @returns Toast ID
+   */
   show: (props: ToastProps): string => {
-    console.log("SuperToast.show called with:", props)
     const id = Math.random().toString(36).substring(2, 9)
     const toast = { ...props, id }
     toasts = [...toasts, toast]
@@ -39,34 +57,46 @@ export const SuperToast = {
     if (props.duration !== 0) {
       setTimeout(() => {
         SuperToast.dismiss(id)
-      }, props.duration || 5000)
+      }, props.duration || 3000) // Default duration: 3 seconds
     }
 
     return id
   },
 
+  /**
+   * Dismisses a toast notification
+   * @param id Toast ID to dismiss
+   */
   dismiss: (id: string) => {
-    console.log("SuperToast.dismiss called for:", id)
     toasts = toasts.filter((t) => t.id !== id)
     notifyListeners()
   },
 
+  /**
+   * Dismisses all toast notifications
+   */
   dismissAll: () => {
     toasts = []
     notifyListeners()
   },
 }
 
-// Test toast function
-export const showTestToast = () => {
-  SuperToast.show({
-    message: "This is a test toast!",
-    type: "info",
-    duration: 3000,
-  })
+// Clean up the store periodically to prevent memory leaks
+if (typeof window !== "undefined") {
+  setInterval(() => {
+    const now = Date.now()
+    for (const toast of toasts) {
+      if (toast.duration && Date.now() - Number.parseInt(toast.id, 36) > toast.duration + 1000) {
+        SuperToast.dismiss(toast.id)
+      }
+    }
+  }, 10000) // Check every 10 seconds
 }
 
-// Toast container component
+/**
+ * Toast container component
+ * Renders all active toast notifications
+ */
 export function ToastContainer() {
   const [mounted, setMounted] = useState(false)
   const [visibleToasts, setVisibleToasts] = useState<ToastState[]>([])
@@ -80,8 +110,6 @@ export function ToastContainer() {
     }
 
     listeners.push(handleToastsChange)
-
-    // Initial state
     setVisibleToasts([...toasts])
 
     return () => {
@@ -99,19 +127,19 @@ export function ToastContainer() {
         <div
           key={toast.id}
           className={`
-            pointer-events-auto rounded-md shadow-lg p-4 text-white 
-            flex items-center justify-between
-            animate-in slide-in-from-top-5 duration-300
-            ${
-              toast.type === "success"
-                ? "bg-green-600"
-                : toast.type === "error"
-                  ? "bg-red-600"
-                  : toast.type === "warning"
-                    ? "bg-amber-600"
-                    : "bg-blue-600"
-            }
-          `}
+           pointer-events-auto rounded-md shadow-lg p-4 text-white 
+           flex items-center justify-between
+           animate-in slide-in-from-top-5 duration-300
+           ${
+             toast.type === "success"
+               ? "bg-green-600"
+               : toast.type === "error"
+                 ? "bg-red-600"
+                 : toast.type === "warning"
+                   ? "bg-amber-600"
+                   : "bg-blue-600"
+           }
+         `}
         >
           <p>{toast.message}</p>
           <button
@@ -126,5 +154,17 @@ export function ToastContainer() {
     </div>,
     document.body,
   )
+}
+
+/**
+ * Shows a test toast notification
+ * Useful for debugging
+ */
+export const showTestToast = () => {
+  SuperToast.show({
+    message: "This is a test toast!",
+    type: "info",
+    duration: 5000,
+  })
 }
 

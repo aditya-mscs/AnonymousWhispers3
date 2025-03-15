@@ -7,13 +7,19 @@ import Header from "@/components/header"
 import { Providers } from "@/redux/providers"
 import { ToastContainer } from "@/components/super-toast"
 
+// Load Inter font with Latin subset
 const inter = Inter({ subsets: ["latin"] })
 
+// Metadata for the application
 export const metadata: Metadata = {
-  title: "Anonymous Dark Secrets",
-  description: "Share your darkest secrets anonymously in a safe space without judgment",
+  title: "Anonymous Whispers 🤫",
+  description: "Share your secrets anonymously in a safe space without judgment",
 }
 
+/**
+ * Root layout component
+ * Wraps the entire application with providers and layout elements
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

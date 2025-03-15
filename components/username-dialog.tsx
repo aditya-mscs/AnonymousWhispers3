@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 // Using our custom Label component
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
+// Replace useToast with SuperToast
+import { SuperToast } from "@/components/super-toast"
 import { saveUsernameToStorage } from "@/lib/storage"
 import { generateRandomUsername } from "@/lib/utils"
 
@@ -21,16 +22,15 @@ interface UsernameDialogProps {
 
 export function UsernameDialog({ open, onOpenChange, currentUsername, onUsernameChange }: UsernameDialogProps) {
   const [username, setUsername] = useState(currentUsername)
-  const { toast } = useToast()
+  //const { toast } = useToast()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
     if (username.trim().length < 3) {
-      toast({
-        title: "Username too short",
-        description: "Username must be at least 3 characters long.",
-        variant: "destructive",
+      SuperToast.show({
+        message: "Username must be at least 3 characters long.",
+        type: "error",
       })
       return
     }
@@ -42,10 +42,9 @@ export function UsernameDialog({ open, onOpenChange, currentUsername, onUsername
     onUsernameChange(username)
 
     // Show success toast
-    toast({
-      title: "Username updated",
-      description: "Your username has been successfully updated.",
-      variant: "success",
+    SuperToast.show({
+      message: "Your username has been successfully updated.",
+      type: "success",
     })
 
     // Close dialog

@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Slider } from "@/components/ui/slider"
 import type { Secret } from "@/types/secret"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useToast } from "@/hooks/use-toast"
+// Replace useToast with SuperToast
+import { SuperToast } from "@/components/super-toast"
 import { getUsernameFromStorage } from "@/lib/storage"
 import { cn } from "@/lib/utils"
 
@@ -34,7 +35,6 @@ export function SecretDialog({
   const [comment, setComment] = useState("")
   const [tempRating, setTempRating] = useState(userRating)
   const router = useRouter()
-  const { toast } = useToast()
   const queryClient = useQueryClient()
 
   // Update tempRating when userRating changes
@@ -70,9 +70,21 @@ export function SecretDialog({
     },
     onSuccess: () => {
       setComment("")
-      toast({
-        title: "Comment added",
-        description: "Your comment has been added to the secret.",
+      // Replace all instances of toast({...}) with SuperToast.show({...})
+      // For example:
+      // Replace:
+      // toast({
+      //   title: "Comment added",
+      //   description: "Your comment has been added to the secret.",
+      // })
+      // With:
+      // SuperToast.show({
+      //   message: "Your comment has been added to the secret.",
+      //   type: "success",
+      // })
+      SuperToast.show({
+        message: "Your comment has been added to the secret.",
+        type: "success",
       })
 
       // Invalidate queries to refresh data
@@ -80,20 +92,18 @@ export function SecretDialog({
       queryClient.invalidateQueries({ queryKey: ["secrets"] })
     },
     onError: (error: Error) => {
-      toast({
-        title: "Failed to add comment",
-        description: error.message,
-        variant: "destructive",
+      SuperToast.show({
+        message: error.message,
+        type: "error",
       })
     },
   })
 
   const handleCommentSubmit = () => {
     if (comment.trim().length < 3) {
-      toast({
-        title: "Comment too short",
-        description: "Your comment must be at least 3 characters long.",
-        variant: "destructive",
+      SuperToast.show({
+        message: "Your comment must be at least 3 characters long.",
+        type: "error",
       })
       return
     }
@@ -117,9 +127,9 @@ export function SecretDialog({
       } else {
         // Fallback to clipboard
         await navigator.clipboard.writeText(shareUrl)
-        toast({
-          title: "Link copied",
-          description: "Secret link copied to clipboard!",
+        SuperToast.show({
+          message: "Secret link copied to clipboard!",
+          type: "success",
         })
       }
     } catch (error) {
@@ -194,6 +204,7 @@ export function SecretDialog({
               onValueChange={handleLocalRatingChange} // Visual update only
               onValueCommit={onRatingChangeEnd} // Save only when finished
               className="w-full"
+              colorByValue={true}
             />
             {/* Color bar that changes based on rating value */}
             <div className={cn("h-1.5 w-full rounded-full overflow-hidden mt-1", "bg-gray-200 dark:bg-gray-700")}>

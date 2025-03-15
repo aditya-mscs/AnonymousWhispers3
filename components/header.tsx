@@ -9,20 +9,30 @@ import { useState, useEffect } from "react"
 import { getOrCreateUsername } from "@/lib/storage"
 import { UsernameDialog } from "@/components/username-dialog"
 
+/**
+ * Header component
+ * Provides navigation and user controls
+ */
 export default function Header() {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [username, setUsername] = useState<string>("")
   const [isUsernameDialogOpen, setIsUsernameDialogOpen] = useState(false)
 
-  // Add useEffect to get or create username on mount
+  // Get or create username on mount
   useEffect(() => {
     const storedUsername = getOrCreateUsername()
     setUsername(storedUsername)
   }, [])
 
+  /**
+   * Toggles the mobile menu
+   */
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
 
+  /**
+   * Updates the username when changed
+   */
   const handleUsernameChange = (newUsername: string) => {
     setUsername(newUsername)
   }
@@ -33,7 +43,7 @@ export default function Header() {
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <Link href="/" className="font-bold text-xl">
-              Anonymous Dark Secrets
+              Anonymous Whispers 🤫
             </Link>
           </div>
 
@@ -76,6 +86,7 @@ export default function Header() {
         </div>
       </header>
 
+      {/* Mobile menu */}
       {isMenuOpen && (
         <div className="fixed inset-0 z-50 bg-background md:hidden">
           <div className="container flex h-16 items-center justify-between">
@@ -118,6 +129,7 @@ export default function Header() {
         </div>
       )}
 
+      {/* Username dialog */}
       <UsernameDialog
         open={isUsernameDialogOpen}
         onOpenChange={setIsUsernameDialogOpen}

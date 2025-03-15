@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Slider } from "@/components/ui/slider"
 import type { Secret } from "@/types/secret"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useToast } from "@/hooks/use-toast"
+import { SuperToast } from "@/components/super-toast"
 import { getUsernameFromStorage, getUserRating, saveUserRating } from "@/lib/storage"
 import { getDarknessTextColor } from "@/lib/utils"
 import SecretActionsMenu from "@/components/secret-actions-menu"
@@ -24,7 +24,6 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
   const [comment, setComment] = useState("")
   const [userRating, setUserRating] = useState(0)
   const [tempRating, setTempRating] = useState(0)
-  const { toast } = useToast()
   const queryClient = useQueryClient()
 
   // Format the date
@@ -62,30 +61,27 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
     },
     onSuccess: () => {
       setComment("")
-      toast({
-        title: "Comment added",
-        description: "Your comment has been added to the secret.",
-        variant: "success",
+      SuperToast.show({
+        message: "Your comment has been added to the secret.",
+        type: "success",
       })
 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["secret", secret.id] })
     },
     onError: (error: Error) => {
-      toast({
-        title: "Failed to add comment",
-        description: error.message,
-        variant: "destructive",
+      SuperToast.show({
+        message: error.message,
+        type: "error",
       })
     },
   })
 
   const handleCommentSubmit = () => {
     if (comment.trim().length < 3) {
-      toast({
-        title: "Comment too short",
-        description: "Your comment must be at least 3 characters long.",
-        variant: "destructive",
+      SuperToast.show({
+        message: "Your comment must be at least 3 characters long.",
+        type: "error",
       })
       return
     }
@@ -106,10 +102,9 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
     // Save to localStorage - this is the only place we make a "service call"
     saveUserRating(secret.id, newRating)
 
-    toast({
-      title: "Rating saved",
-      description: `You rated this secret ${newRating}/10 for darkness.`,
-      variant: "success",
+    SuperToast.show({
+      message: `You rated this secret ${newRating}/10 for darkness.`,
+      type: "success",
     })
   }
 
@@ -123,17 +118,16 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
       // Use Web Share API if available
       if (navigator.share) {
         await navigator.share({
-          title: "Anonymous Dark Secret",
-          text: "Check out this anonymous secret",
+          title: "Anonymous Whispers 🤫",
+          text: "Check out this anonymous whisper",
           url: shareUrl,
         })
       } else {
         // Fallback to clipboard
         await navigator.clipboard.writeText(shareUrl)
-        toast({
-          title: "Link copied",
-          description: "Secret link copied to clipboard!",
-          variant: "success",
+        SuperToast.show({
+          message: "Secret link copied to clipboard!",
+          type: "success",
         })
       }
 

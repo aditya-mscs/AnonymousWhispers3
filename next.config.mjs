@@ -1,22 +1,17 @@
 const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
-  images: {
-    domains: ['placeholder.com'],
-  },
-  // Configure for AWS Amplify deployment
-  output: 'standalone',
-  // Enable AWS Lambda integration for API routes
+  // Remove swcMinify as it's enabled by default in Next.js 15
+  
+  // Update serverComponentsExternalPackages to serverExternalPackages
+  serverExternalPackages: [
+    '@aws-sdk/client-dynamodb',
+    '@aws-sdk/lib-dynamodb',
+    '@aws-sdk/client-sts',
+  ],
+  
   experimental: {
-    serverComponentsExternalPackages: ['@aws-sdk'],
-  },
-  // Disable ESLint during build (we'll run it separately)
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  // Disable TypeScript checking during build (we'll run it separately)
-  typescript: {
-    ignoreBuildErrors: true,
+    // Remove serverComponentsExternalPackages from experimental
+    // Other experimental features can stay
+    authInterrupts: true,
   },
 }
 

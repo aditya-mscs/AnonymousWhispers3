@@ -11,11 +11,19 @@ import { Label } from "@/components/ui/label"
 import { SuperToast } from "@/components/super-toast"
 import { Shield, Lock } from "lucide-react"
 
+/**
+ * Admin login form component
+ * Handles authentication for the admin portal
+ */
 export function AdminLoginForm() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
+  /**
+   * Handles form submission
+   * Authenticates the admin user
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)

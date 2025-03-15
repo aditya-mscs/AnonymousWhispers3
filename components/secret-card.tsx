@@ -13,22 +13,24 @@ import SecretSlide from "@/components/secret-slide"
 import type { Secret } from "@/types/secret"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { getUserRating, saveUserRating } from "@/lib/storage"
-import { useToast } from "@/hooks/use-toast"
-import { secretsApi } from "@/lib/api-client"
 import { SuperToast } from "@/components/super-toast"
 import { getDarknessTextColor } from "@/lib/utils"
 import SecretActionsMenu from "@/components/secret-actions-menu"
+import { secretsApi } from "@/lib/api"
 
 interface SecretCardProps {
   secret: Secret
 }
 
+/**
+ * Secret card component
+ * Displays a secret with rating, comments, and sharing functionality
+ */
 export default function SecretCard({ secret }: SecretCardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [userRating, setUserRating] = useState(0)
   const [tempRating, setTempRating] = useState(0)
   const router = useRouter()
-  const { toast } = useToast()
   const queryClient = useQueryClient()
 
   // Format the date
@@ -51,6 +53,10 @@ export default function SecretCard({ secret }: SecretCardProps) {
     },
   })
 
+  /**
+   * Handles sharing a secret
+   * Uses Web Share API if available, otherwise copies to clipboard
+   */
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation()
     try {
@@ -60,8 +66,8 @@ export default function SecretCard({ secret }: SecretCardProps) {
       // Use Web Share API if available
       if (navigator.share) {
         await navigator.share({
-          title: "Anonymous Dark Secret",
-          text: "Check out this anonymous secret",
+          title: "Anonymous Whispers 🤫",
+          text: "Check out this anonymous whisper",
           url: shareUrl,
         })
       } else {
@@ -80,16 +86,25 @@ export default function SecretCard({ secret }: SecretCardProps) {
     }
   }
 
+  /**
+   * Opens the secret detail dialog
+   */
   const handleContentClick = () => {
     setIsDialogOpen(true)
   }
 
-  // This updates the visual slider without saving - NO SERVICE CALL HERE
+  /**
+   * Updates the visual slider without saving
+   * No service call is made here
+   */
   const handleRatingChange = (value: number[]) => {
     setTempRating(value[0])
   }
 
-  // This saves the rating ONLY when the user finishes sliding - SERVICE CALL HERE
+  /**
+   * Saves the rating when the user finishes sliding
+   * Service call is made here
+   */
   const handleRatingChangeEnd = (value: number[]) => {
     const newRating = value[0]
     setUserRating(newRating)
@@ -151,7 +166,7 @@ export default function SecretCard({ secret }: SecretCardProps) {
         </CardFooter>
       </Card>
 
-      {/* Replace the SecretDialog component with SecretSlide at the end of the component */}
+      {/* Secret detail slide panel */}
       <SecretSlide
         secret={secret}
         open={isDialogOpen}

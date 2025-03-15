@@ -115,8 +115,8 @@ export default function SecretSlide({
       // Use Web Share API if available
       if (navigator.share) {
         await navigator.share({
-          title: "Anonymous Dark Secret",
-          text: "Check out this anonymous secret",
+          title: "Anonymous Whispers 🤫",
+          text: "Check out this anonymous whisper",
           url: shareUrl,
         })
       } else {
