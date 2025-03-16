@@ -76,7 +76,10 @@ export async function getSecretById(id: string): Promise<SecretType | null> {
       new UpdateCommand({
         TableName: SECRETS_TABLE,
         Key: { id },
-        UpdateExpression: "SET views = if_not_exists(views, :zero) + :one",
+        UpdateExpression: "SET #v = if_not_exists(#v, :zero) + :one",
+        ExpressionAttributeNames: {
+          "#v": "views",
+        },
         ExpressionAttributeValues: {
           ":zero": 0,
           ":one": 1,
