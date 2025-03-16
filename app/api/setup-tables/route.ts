@@ -2,6 +2,9 @@ import { NextResponse } from "next/server"
 import { DynamoDBClient, CreateTableCommand, ListTablesCommand } from "@aws-sdk/client-dynamodb"
 import { getAwsEnvironment, getAwsCredentials } from "@/lib/aws-env"
 
+// Add this constant after the existing ones
+const SOCIAL_CONFIG_TABLE = "anonymous-dark-secrets-config"
+
 export async function GET() {
   try {
     // Get AWS environment variables
@@ -17,9 +20,11 @@ export async function GET() {
     const listTablesResponse = await client.send(new ListTablesCommand({}))
     const allTables = listTablesResponse.TableNames || []
 
+    // Update the results object in the GET function
     const results = {
       secretsTable: { name: awsEnv.secretsTable, created: false, existed: false },
       commentsTable: { name: awsEnv.commentsTable, created: false, existed: false },
+      configTable: { name: SOCIAL_CONFIG_TABLE, created: false, existed: false },
     }
 
     // Create Secrets table if it doesn't exist
@@ -75,6 +80,26 @@ export async function GET() {
       results.commentsTable.created = true
     } else {
       results.commentsTable.existed = true
+    }
+
+    // Add this code after the Comments table creation code
+    // Create Config table if it doesn't exist
+    if (!allTables.includes(SOCIAL_CONFIG_TABLE)) {
+      await client.send(
+        new CreateTableCommand({
+          TableName: SOCIAL_CONFIG_TABLE,
+          KeySchema: [{ AttributeName: "configId", KeyType: "HASH" }],
+          AttributeDefinitions: [{ AttributeName: "configId", AttributeType: "S" }],
+          ProvisionedThroughput: {
+            ReadCapacityUnits: 5,
+            WriteCapacityUnits: 5,
+          },
+        }),
+      )
+
+      results.configTable.created = true
+    } else {
+      results.configTable.existed = true
     }
 
     return NextResponse.json({

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SuperToast } from "@/components/super-toast"
 import { Shield, Lock } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 
 /**
  * Admin login form component
@@ -19,6 +20,16 @@ export function AdminLoginForm() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const [rememberMe, setRememberMe] = useState(false)
+
+  useEffect(() => {
+    // Check if password is saved in localStorage
+    const savedPassword = localStorage.getItem("admin_password")
+    if (savedPassword) {
+      setPassword(savedPassword)
+      setRememberMe(true)
+    }
+  }, [])
 
   /**
    * Handles form submission
@@ -38,6 +49,13 @@ export function AdminLoginForm() {
       })
 
       if (response.ok) {
+        // Save password if remember me is checked
+        if (rememberMe) {
+          localStorage.setItem("admin_password", password)
+        } else {
+          localStorage.removeItem("admin_password")
+        }
+
         SuperToast.show({
           message: "Login successful!",
           type: "success",
@@ -85,6 +103,18 @@ export function AdminLoginForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+            </div>
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="rememberMe"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
+              />
+              <label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer">
+                Remember me
+              </label>
             </div>
           </div>
         </CardContent>

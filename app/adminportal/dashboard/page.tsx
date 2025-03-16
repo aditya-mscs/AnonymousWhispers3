@@ -4,7 +4,7 @@ import { requireAdmin, getAdminStats } from "@/lib/admin"
 import { StatsOverview } from "@/components/admin/stats-overview"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, MessageSquare, LogOut, Flag } from "lucide-react"
+import { FileText, MessageSquare, LogOut, Flag, Settings } from "lucide-react"
 import { Share2 } from "lucide-react"
 
 export default async function AdminDashboardPage() {
@@ -100,6 +100,23 @@ export default async function AdminDashboardPage() {
             <CardContent>
               <p className="text-sm text-muted-foreground">
                 Review and approve high-quality secrets for sharing on Twitter and Instagram to reach a wider audience.
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/adminportal/social-config">
+          <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Settings className="h-5 w-5 mr-2 text-primary" />
+                Social Media Config
+              </CardTitle>
+              <CardDescription>Configure social media API credentials</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Set up and manage your Twitter and Instagram API credentials for automatic posting of approved secrets.
               </p>
             </CardContent>
           </Card>

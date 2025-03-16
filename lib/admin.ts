@@ -32,20 +32,22 @@ export function clearAdminSession() {
   cookieStore.delete("admin_session")
 }
 
+// Update the checkAdminSession function to be async
 /**
  * Checks if the admin session cookie exists
  */
-export function checkAdminSession() {
+export async function checkAdminSession() {
   const cookieStore = cookies()
-  return cookieStore.has("admin_session")
+  return await cookieStore.has("admin_session")
 }
 
+// Update the requireAdmin function to handle async
 /**
  * Middleware to require admin authentication
  * Redirects to login page if not authenticated
  */
-export function requireAdmin() {
-  if (!checkAdminSession()) {
+export async function requireAdmin() {
+  if (!(await checkAdminSession())) {
     redirect("/adminportal")
   }
 }
