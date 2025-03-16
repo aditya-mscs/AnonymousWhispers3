@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server"
 import { checkAdminSession, deleteSecret } from "@/lib/admin"
 
-export async function DELETE(request: Request, context: any) {
+export async function DELETE(request: Request) {
   try {
     // Check admin session
     if (!checkAdminSession()) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const id = context.params?.id;
+    // Extract the ID from the URL path
+    const url = new URL(request.url)
+    const pathParts = url.pathname.split("/")
+    const id = pathParts[pathParts.length - 1]
+
+    if (!id) {
+      return NextResponse.json({ error: "Secret ID is required" }, { status: 400 })
+    }
 
     // Delete secret
     const result = await deleteSecret(id)
