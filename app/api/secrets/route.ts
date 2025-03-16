@@ -151,35 +151,3 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Generate mock secrets for fallback
-function generateMockSecrets(count = 10) {
-  const secrets = []
-  const contents = [
-    "I've been pretending to like my job for 5 years. Everyone thinks I'm passionate about it, but I secretly hate every minute.",
-    "I sabotaged my best friend's job interview because I was jealous of their success. They still don't know it was me.",
-    "I've been living a double life online for years. My family has no idea about my alter ego or the community I'm part of.",
-    "I pretend to be happy on social media, but I cry myself to sleep almost every night. No one knows how broken I really am.",
-    "I've been faking my academic credentials for years. My entire career is built on a lie, and I live in constant fear of being exposed.",
-  ]
-
-  for (let i = 0; i < count; i++) {
-    const contentIndex = i % contents.length
-    const daysAgo = Math.floor(Math.random() * 30)
-    const date = new Date()
-    date.setDate(date.getDate() - daysAgo)
-
-    secrets.push({
-      id: `mock-${i}`,
-      content: contents[contentIndex],
-      darkness: Math.floor(Math.random() * 10) + 1,
-      username: `Anonymous${Math.floor(Math.random() * 1000)}`,
-      createdAt: date.toISOString(),
-      comments: [],
-      views: Math.floor(Math.random() * 200),
-      shares: Math.floor(Math.random() * 20),
-    })
-  }
-
-  return secrets
-}
-

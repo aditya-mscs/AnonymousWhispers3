@@ -19,6 +19,18 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { SuperToast } from "@/components/super-toast"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Trash2, Search, AlertTriangle, RefreshCw, Share } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { getDarknessTextColor } from "@/lib/utils"
@@ -42,6 +54,7 @@ export function SecretManagement({ initialSecrets }: SecretManagementProps) {
   const [filterField, setFilterField] = useState<string>("")
   const [filterValue, setFilterValue] = useState<string>("")
   const router = useRouter()
+  const [selectedSecrets, setSelectedSecrets] = useState<string[]>([])
 
   const fetchSecrets = async (newPage = page, field = filterField, value = filterValue) => {
     setIsLoading(true)
@@ -169,6 +182,66 @@ export function SecretManagement({ initialSecrets }: SecretManagementProps) {
     fetchSecrets(newPage)
   }
 
+  const handleCheckboxChange = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedSecrets((prev) => [...prev, id])
+    } else {
+      setSelectedSecrets((prev) => prev.filter((secretId) => secretId !== id))
+    }
+  }
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedSecrets(secrets.map((secret) => secret.id))
+    } else {
+      setSelectedSecrets([])
+    }
+  }
+
+  const handleDeleteSelected = async () => {
+    if (selectedSecrets.length === 0) return
+
+    setIsLoading(true)
+    try {
+      // Delete each selected secret
+      const results = await Promise.all(
+        selectedSecrets.map((id) =>
+          fetch(`/api/adminportal/secrets/${id}`, {
+            method: "DELETE",
+          }),
+        ),
+      )
+
+      // Check if all deletions were successful
+      const allSuccessful = results.every((res) => res.ok)
+
+      if (allSuccessful) {
+        SuperToast.show({
+          message: `Successfully deleted ${selectedSecrets.length} secrets`,
+          type: "success",
+        })
+        // Refresh the list
+        fetchSecrets()
+        // Refresh the server-side data
+        router.refresh()
+        // Clear selection
+        setSelectedSecrets([])
+      } else {
+        SuperToast.show({
+          message: "Some secrets could not be deleted",
+          type: "error",
+        })
+      }
+    } catch (error) {
+      SuperToast.show({
+        message: "An error occurred while deleting the secrets",
+        type: "error",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -224,6 +297,34 @@ export function SecretManagement({ initialSecrets }: SecretManagementProps) {
           <CardDescription>View and delete secrets from the platform</CardDescription>
         </CardHeader>
         <CardContent>
+          {selectedSecrets.length > 0 && (
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-sm">
+                {selectedSecrets.length} {selectedSecrets.length === 1 ? "secret" : "secrets"} selected
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" disabled={isLoading}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Selected
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete the {selectedSecrets.length} selected
+                      {selectedSecrets.length === 1 ? " secret" : " secrets"} and all associated comments.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteSelected}>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
           {isLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -236,6 +337,13 @@ export function SecretManagement({ initialSecrets }: SecretManagementProps) {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={secrets.length > 0 && selectedSecrets.length === secrets.length}
+                          onCheckedChange={handleSelectAll}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
                       <TableHead>Username</TableHead>
                       <TableHead>Content</TableHead>
                       <TableHead>Darkness</TableHead>
@@ -246,6 +354,13 @@ export function SecretManagement({ initialSecrets }: SecretManagementProps) {
                   <TableBody>
                     {secrets.map((secret) => (
                       <TableRow key={secret.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedSecrets.includes(secret.id)}
+                            onCheckedChange={(checked) => handleCheckboxChange(secret.id, checked === true)}
+                            aria-label={`Select secret by ${secret.username}`}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">{secret.username}</TableCell>
                         <TableCell className="max-w-xs truncate">{secret.content}</TableCell>
                         <TableCell>
