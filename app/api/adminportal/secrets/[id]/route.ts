@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 import { checkAdminSession, deleteSecret } from "@/lib/admin"
 
-export async function DELETE(request: Request, context: { params: { id: string } }) {
+// Update the function signature to use the correct type for the second parameter
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Check admin session
     if (!checkAdminSession()) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const id = context.params.id
+    const id = params.id
 
     // Delete secret
     const result = await deleteSecret(id)
