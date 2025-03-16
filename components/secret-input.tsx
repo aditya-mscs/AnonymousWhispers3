@@ -314,6 +314,14 @@ export default function SecretInput() {
             </div>
           </div>
         )}
+
+        {/* Social sharing notification */}
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md border border-blue-200 dark:border-blue-800">
+          <p className="text-sm text-blue-700 dark:text-blue-300">
+            <span className="font-medium">Note:</span> High-quality secrets may be shared anonymously on our social
+            media platforms to reach a wider audience. Your identity will never be revealed.
+          </p>
+        </div>
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button

@@ -61,6 +61,12 @@ export default function AboutPage() {
             Our platform is designed to be a safe space where users can find relief through anonymous expression while
             also connecting with others who may have similar experiences.
           </p>
+          <p>
+            To help build a supportive community around shared experiences, we occasionally share compelling secrets on
+            our social media platforms. <strong>All shared content remains completely anonymous</strong>, with no
+            identifying information ever revealed. This helps others find our platform and connect with stories that
+            resonate with their own experiences.
+          </p>
         </CardContent>
       </Card>
 
@@ -81,6 +87,30 @@ export default function AboutPage() {
           <p>
             We employ strict security measures to ensure your secrets remain anonymous and the platform remains free
             from abuse.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Social Media Sharing</CardTitle>
+          <CardDescription>How we share content while protecting your privacy</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p>
+            <strong>Your privacy is our top priority.</strong> While we do share select secrets on our social media
+            platforms, we follow strict guidelines to ensure your anonymity is preserved:
+          </p>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>All shared content is completely anonymous</li>
+            <li>We never share any identifying information except AW usernames</li>
+            <li>We only share content that meets our quality criteria</li>
+            <li>We moderate all content to ensure it adheres to our community guidelines</li>
+            <li>You can opt out of social sharing by contacting us</li>
+          </ul>
+          <p>
+            By sharing anonymous stories, we aim to create awareness about the universal nature of human struggles and
+            provide a platform where people can find connection through shared experiences.
           </p>
         </CardContent>
       </Card>

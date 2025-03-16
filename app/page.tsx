@@ -2,7 +2,6 @@ import { Suspense } from "react"
 import SecretInput from "@/components/secret-input"
 import SecretTabs from "@/components/secret-tabs"
 import { Skeleton } from "@/components/ui/skeleton"
-import { MockDataIndicator } from "@/components/mock-data-indicator"
 
 export default function Home() {
   return (
@@ -14,8 +13,6 @@ export default function Home() {
           Just liberation through confession.
         </p>
       </section>
-
-      <MockDataIndicator />
 
       <SecretInput />
 

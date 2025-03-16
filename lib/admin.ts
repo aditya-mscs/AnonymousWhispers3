@@ -308,40 +308,6 @@ export async function getReportedSecrets() {
 
     const docClient = DynamoDBDocumentClient.from(client)
 
-    // In development, return mock data
-    if (process.env.NODE_ENV === "development") {
-      return [
-        {
-          secret: {
-            id: "mock-report-1",
-            content: "This is a reported secret with inappropriate content that violates community guidelines.",
-            darkness: 9,
-            username: "ReportedUser123",
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-          },
-          reports: [
-            {
-              id: "report-1",
-              secretId: "mock-report-1",
-              reason: "This content is inappropriate and offensive",
-              username: "Concerned123",
-              createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-              status: "pending",
-            },
-            {
-              id: "report-2",
-              secretId: "mock-report-1",
-              reason: "This violates community guidelines",
-              username: "SafetyFirst456",
-              createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-              status: "pending",
-            },
-          ],
-          reportCount: 2,
-        },
-      ]
-    }
-
     // Get all reports from DynamoDB
     const reportsResult = await docClient.send(
       new ScanCommand({

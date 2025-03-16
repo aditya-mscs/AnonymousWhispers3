@@ -14,20 +14,17 @@ export default function SecretTabs() {
   const [activeTab, setActiveTab] = useState("trending")
   const dispatch = useAppDispatch()
   const localSecrets = useAppSelector((state) => state.secrets.secrets)
-  const [useMockData, setUseMockData] = useState(false)
   const queryClient = useQueryClient()
 
   // Fetch secrets based on active tab
   const { data, isLoading, error } = useQuery({
-    queryKey: ["secrets", activeTab, useMockData],
+    queryKey: ["secrets", activeTab],
     queryFn: async () => {
       try {
-        // Use our API client which handles browser environments safely
         const data = await secretsApi.getSecrets(activeTab, 12)
         return data
       } catch (error) {
         console.error("Error fetching secrets:", error)
-        setUseMockData(true)
         throw error
       }
     },
@@ -57,9 +54,6 @@ export default function SecretTabs() {
     return (
       <div className="text-center py-10">
         <p className="text-destructive">Failed to load secrets. Please try again later.</p>
-        <button onClick={() => setUseMockData(true)} className="mt-4 px-4 py-2 bg-primary text-white rounded-md">
-          Use Mock Data Instead
-        </button>
       </div>
     )
   }
@@ -98,12 +92,6 @@ export default function SecretTabs() {
         <TabsTrigger value="recent">Most Recent</TabsTrigger>
         <TabsTrigger value="dark">Most Dark</TabsTrigger>
       </TabsList>
-
-      {useMockData && (
-        <div className="mt-2 text-center text-sm text-amber-500 dark:text-amber-400">
-          Using mock data - AWS credentials issue detected
-        </div>
-      )}
 
       <TabsContent value="trending" className="mt-6">
         <SecretsGrid secrets={getSortedSecrets("trending", secrets)} isLoading={isLoading} />

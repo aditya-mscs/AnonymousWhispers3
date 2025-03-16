@@ -8,29 +8,6 @@ import { hashIp } from "./crypto-utils"
 // Get environment variables
 const awsEnv = getAwsEnvironment()
 
-// Mock data for fallback
-const mockSecrets: SecretType[] = [
-  {
-    id: "1",
-    content:
-      "I've been pretending to like my job for 5 years. Everyone thinks I'm passionate about it, but I secretly hate every minute.",
-    darkness: 7,
-    username: "ShadowyGhost42",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-    comments: [
-      {
-        id: "c1",
-        content: "I feel the same way. It's exhausting keeping up the act.",
-        username: "VeiledWhisper99",
-        createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-      },
-    ],
-    views: 120,
-    shares: 5,
-  },
-  // Add more mock data as needed
-]
-
 // Function to save a new secret
 export async function saveSecret(
   secretData: Omit<SecretType, "id" | "comments" | "views" | "shares">,
@@ -68,24 +45,6 @@ export async function saveSecret(
     }
   } catch (error) {
     console.error("Error creating secret:", error)
-
-    // In development, create a mock secret instead
-    if (process.env.NODE_ENV === "development") {
-      console.log("Using mock data instead")
-      const mockSecret: SecretType = {
-        id,
-        content: secretData.content,
-        darkness: secretData.darkness,
-        username: secretData.username,
-        createdAt: secretData.createdAt instanceof Date ? secretData.createdAt.toISOString() : secretData.createdAt,
-        comments: [],
-        views: 0,
-        shares: 0,
-      }
-      mockSecrets.unshift(mockSecret)
-      return mockSecret
-    }
-
     throw error
   }
 }
@@ -102,11 +61,6 @@ export async function getSecretById(id: string): Promise<SecretType | null> {
     )
 
     if (!result.Item) {
-      // Check mock data in development
-      if (process.env.NODE_ENV === "development") {
-        const mockSecret = mockSecrets.find((s) => s.id === id)
-        if (mockSecret) return mockSecret
-      }
       return null
     }
 
@@ -140,13 +94,6 @@ export async function getSecretById(id: string): Promise<SecretType | null> {
     }
   } catch (error) {
     console.error("Error fetching secret:", error)
-
-    // In development, use mock data
-    if (process.env.NODE_ENV === "development") {
-      console.log("Using mock data instead")
-      return mockSecrets.find((s) => s.id === id) || null
-    }
-
     return null
   }
 }
@@ -204,12 +151,6 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
     secrets = secrets.slice(offset, offset + limit)
     console.log(`DB: After pagination, returning ${secrets.length} secrets`)
 
-    // If no secrets found, return empty array in development
-    if (secrets.length === 0 && process.env.NODE_ENV === "development") {
-      console.log("DB: No secrets found, using mock data in development")
-      return mockSecrets.slice(0, limit)
-    }
-
     // Get comments for each secret
     const secretsWithComments = await Promise.all(
       secrets.map(async (secret) => {
@@ -230,14 +171,6 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
     return secretsWithComments
   } catch (error) {
     console.error("Error fetching secrets:", error)
-
-    // In development, use mock data
-    if (process.env.NODE_ENV === "development") {
-      console.log("Using mock data instead")
-      return mockSecrets.slice(0, limit)
-    }
-
-    // Re-throw the error to be handled by the caller
     throw error
   }
 }
@@ -265,14 +198,6 @@ export async function getCommentsBySecretId(secretId: string): Promise<CommentTy
     }))
   } catch (error) {
     console.error("Error fetching comments:", error)
-
-    // In development, return mock comments
-    if (process.env.NODE_ENV === "development") {
-      console.log("Using mock data instead")
-      const mockSecret = mockSecrets.find((s) => s.id === secretId)
-      return mockSecret?.comments || []
-    }
-
     return []
   }
 }
@@ -462,12 +387,6 @@ export async function reportSecret(reportData: ReportData): Promise<{ success: b
     return { success: true }
   } catch (error) {
     console.error("Error reporting secret:", error)
-
-    // In development, just return success
-    if (process.env.NODE_ENV === "development") {
-      return { success: true }
-    }
-
     return { success: false, message: "Failed to submit report" }
   }
 }

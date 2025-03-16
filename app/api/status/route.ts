@@ -31,7 +31,7 @@ export async function GET() {
 
     return NextResponse.json({
       status: "ok",
-      usingMockData: !awsConnected,
+      awsConnected,
       hasAwsCredentials,
       timestamp: new Date().toISOString(),
     })
@@ -40,7 +40,6 @@ export async function GET() {
     return NextResponse.json(
       {
         status: "error",
-        usingMockData: true,
         error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },

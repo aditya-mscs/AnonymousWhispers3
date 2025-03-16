@@ -19,7 +19,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { SuperToast } from "@/components/super-toast"
-import { Trash2, Search, AlertTriangle, RefreshCw } from "lucide-react"
+import { Trash2, Search, AlertTriangle, RefreshCw, Share } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { getDarknessTextColor } from "@/lib/utils"
 import type { Secret } from "@/types/secret"
@@ -106,6 +106,46 @@ export function SecretManagement({ initialSecrets }: SecretManagementProps) {
     } catch (error) {
       SuperToast.show({
         message: "An error occurred while deleting the secret",
+        type: "error",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSocialShare = async (id: string) => {
+    if (!confirm("Are you sure you want to share this secret on social media platforms?")) {
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/adminportal/social-share`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          secretId: id,
+          platforms: ["twitter", "instagram"],
+        }),
+      })
+
+      if (response.ok) {
+        SuperToast.show({
+          message: "Secret shared on social media platforms",
+          type: "success",
+        })
+      } else {
+        const data = await response.json()
+        SuperToast.show({
+          message: data.error || "Failed to share secret",
+          type: "error",
+        })
+      }
+    } catch (error) {
+      SuperToast.show({
+        message: "An error occurred while sharing the secret",
         type: "error",
       })
     } finally {
@@ -220,15 +260,27 @@ export function SecretManagement({ initialSecrets }: SecretManagementProps) {
                           {formatDistanceToNow(new Date(secret.createdAt), { addSuffix: true })}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(secret.id)}
-                            disabled={isLoading}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSocialShare(secret.id)}
+                              disabled={isLoading}
+                              title="Share on social media"
+                            >
+                              <Share className="h-4 w-4" />
+                              <span className="sr-only">Share</span>
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(secret.id)}
+                              disabled={isLoading}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

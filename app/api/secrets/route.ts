@@ -8,6 +8,9 @@ import { rateLimit } from "@/lib/rate-limit"
 // Add this import at the top
 import { validateSubmissionToken } from "@/lib/submission-token"
 
+// Add this import at the top of the file
+import { qualifiesForSocialSharing, postToTwitter, postToInstagram } from "@/lib/social-sharing"
+
 // Schema for validating secret input
 const secretSchema = z.object({
   content: z.string().min(10).max(1000),
@@ -77,6 +80,14 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
     })
 
+    // Check if the secret qualifies for social sharing
+    if (qualifiesForSocialSharing(secret)) {
+      // Post to social media platforms asynchronously
+      // We don't await these to avoid delaying the response to the user
+      postToTwitter(secret).catch(console.error)
+      postToInstagram(secret).catch(console.error)
+    }
+
     // Add rate limit headers to the response
     const response = NextResponse.json({ success: true, secret }, { status: 201 })
     for (const [key, value] of rateLimitResult.headers.entries()) {
@@ -90,7 +101,6 @@ export async function POST(request: NextRequest) {
       {
         error: "Failed to create secret",
         message: error instanceof Error ? error.message : "Unknown error",
-        stack: error instanceof Error ? error.stack : undefined,
       },
       { status: 500 },
     )
@@ -125,14 +135,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ secrets })
     } catch (error) {
       console.error("Error in getSecrets:", error)
-
-      // Return mock data as fallback
-      console.log("API: Returning mock data as fallback")
-      return NextResponse.json({
-        secrets: generateMockSecrets(limit),
-        message: "Using mock data due to database error",
-        params: { type, limit, page },
-      })
+      throw error
     }
   } catch (error) {
     console.error("Error fetching secrets:", error)
@@ -140,7 +143,6 @@ export async function GET(request: NextRequest) {
       {
         error: "Failed to fetch secrets",
         message: error instanceof Error ? error.message : "Unknown error",
-        stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString(),
       },
       { status: 500 },

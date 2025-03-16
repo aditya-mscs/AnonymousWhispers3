@@ -1,92 +1,10 @@
 import { notFound } from "next/navigation"
 import SecretDetail from "@/components/secret-detail"
 import { secretsApi } from "@/lib/api-client"
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
-import { DynamoDBDocumentClient, GetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb"
-import { getAwsEnvironment, getAwsCredentials } from "@/lib/aws-env"
 
 interface SecretPageProps {
   params: {
     id: string
-  }
-}
-
-// Direct DB access function as a fallback
-async function getSecretDirectlyFromDB(id: string) {
-  try {
-    console.log("Attempting direct DB access for secret:", id)
-
-    // Get AWS environment variables
-    const awsEnv = getAwsEnvironment()
-
-    // Initialize the DynamoDB client
-    const client = new DynamoDBClient({
-      region: awsEnv.region,
-      credentials: getAwsCredentials(),
-    })
-
-    const docClient = DynamoDBDocumentClient.from(client)
-
-    // Get the secret
-    const secretResult = await docClient.send(
-      new GetCommand({
-        TableName: awsEnv.secretsTable,
-        Key: { id },
-      }),
-    )
-
-    if (!secretResult.Item) {
-      console.log("Secret not found in direct DB access")
-      return null
-    }
-
-    // Get comments for this secret
-    const commentsResult = await docClient.send(
-      new QueryCommand({
-        TableName: awsEnv.commentsTable,
-        IndexName: "SecretIdIndex",
-        KeyConditionExpression: "secretId = :secretId",
-        ExpressionAttributeValues: {
-          ":secretId": id,
-        },
-      }),
-    )
-
-    const comments = (commentsResult.Items || []).map((item) => ({
-      id: item.id,
-      content: item.content,
-      username: item.username,
-      createdAt: item.createdAt,
-    }))
-
-    // Increment view count
-    await docClient.send(
-      new GetCommand({
-        TableName: awsEnv.secretsTable,
-        Key: { id },
-        UpdateExpression: "SET views = if_not_exists(views, :zero) + :one",
-        ExpressionAttributeValues: {
-          ":zero": 0,
-          ":one": 1,
-        },
-        ReturnValues: "NONE",
-      }),
-    )
-
-    // Return the secret with comments
-    return {
-      id: secretResult.Item.id,
-      content: secretResult.Item.content,
-      darkness: secretResult.Item.darkness,
-      username: secretResult.Item.username,
-      createdAt: secretResult.Item.createdAt,
-      comments,
-      views: (secretResult.Item.views || 0) + 1,
-      shares: secretResult.Item.shares || 0,
-    }
-  } catch (error) {
-    console.error("Error in direct DB access:", error)
-    return null
   }
 }
 
@@ -97,20 +15,8 @@ export default async function SecretPage({ params }: SecretPageProps) {
     const id = resolvedParams.id
     console.log("Fetching secret with ID:", id)
 
-    let secret
-
-    try {
-      // First try the API client
-      console.log("About to call secretsApi.getSecretById")
-      secret = await secretsApi.getSecretById(id)
-      console.log("API response received")
-    } catch (apiError) {
-      console.error("API client error:", apiError)
-
-      // If API client fails, try direct DB access
-      console.log("Falling back to direct DB access")
-      secret = await getSecretDirectlyFromDB(id)
-    }
+    // Fetch the secret using the API client
+    const secret = await secretsApi.getSecretById(id)
 
     if (!secret) {
       console.log("Secret not found, returning 404")
