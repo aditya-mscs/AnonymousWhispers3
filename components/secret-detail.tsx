@@ -15,6 +15,11 @@ import { getUsernameFromStorage, getUserRating, saveUserRating } from "@/lib/sto
 import { getDarknessTextColor } from "@/lib/utils"
 import SecretActionsMenu from "@/components/secret-actions-menu"
 import DarknessSlider from "@/components/darkness-slider"
+import { SocialSharingNotice } from "@/components/social-sharing-notice"
+
+// Add these imports at the top
+import { useAppDispatch, useAppSelector } from "@/redux/hooks"
+import { setHasPostedComment } from "@/redux/features/notifications/notificationsSlice"
 
 interface SecretDetailProps {
   secret: Secret
@@ -25,6 +30,13 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
   const [userRating, setUserRating] = useState(0)
   const [tempRating, setTempRating] = useState(0)
   const queryClient = useQueryClient()
+
+  // Remove this line:
+  // const [hasPostedComment, setHasPostedComment] = useState(false)
+
+  // Add this line after other hooks:
+  const dispatch = useAppDispatch()
+  const hasPostedComment = useAppSelector((state) => state.notifications.hasPostedComment)
 
   // Format the date
   const formattedDate = formatDistanceToNow(new Date(secret.createdAt), { addSuffix: true })
@@ -61,6 +73,8 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
     },
     onSuccess: () => {
       setComment("")
+      // Replace: setHasPostedComment(true)
+      dispatch(setHasPostedComment(true))
       SuperToast.show({
         message: "Your comment has been added to the secret.",
         type: "success",
@@ -68,6 +82,9 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["secret", secret.id] })
+
+      // Mark that a comment has been posted in this session
+      sessionStorage.setItem("has_posted_comment", "true")
     },
     onError: (error: Error) => {
       SuperToast.show({
@@ -198,6 +215,7 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
               {commentMutation.isPending ? "Posting..." : "Post Comment"}
             </Button>
           </div>
+          {hasPostedComment && <SocialSharingNotice />}
 
           {sortedComments && sortedComments.length > 0 ? (
             <div className="space-y-4 mt-6">

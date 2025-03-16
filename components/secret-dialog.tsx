@@ -13,6 +13,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 // Replace useToast with SuperToast
 import { SuperToast } from "@/components/super-toast"
 import { getUsernameFromStorage } from "@/lib/storage"
+// First, add the import for the SocialSharingNotice component
+import { SocialSharingNotice } from "@/components/social-sharing-notice"
+
+// Add these imports at the top
+import { useAppDispatch, useAppSelector } from "@/redux/hooks"
+import { setHasPostedComment } from "@/redux/features/notifications/notificationsSlice"
 
 interface SecretDialogProps {
   secret: Secret
@@ -35,6 +41,10 @@ export function SecretDialog({
   const [tempRating, setTempRating] = useState(userRating)
   const router = useRouter()
   const queryClient = useQueryClient()
+
+  // Add this line after other hooks:
+  const dispatch = useAppDispatch()
+  const hasPostedComment = useAppSelector((state) => state.notifications.hasPostedComment)
 
   // Update tempRating when userRating changes
   useEffect(() => {
@@ -67,8 +77,13 @@ export function SecretDialog({
 
       return response.json()
     },
+    // Update the onSuccess callback in the commentMutation to set hasPostedComment to true
     onSuccess: () => {
       setComment("")
+      // In the onSuccess callback of commentMutation, replace:
+      // setHasPostedComment(true)
+      // With:
+      dispatch(setHasPostedComment(true))
       // Replace all instances of toast({...}) with SuperToast.show({...})
       // For example:
       // Replace:
@@ -77,10 +92,6 @@ export function SecretDialog({
       //   description: "Your comment has been added to the secret.",
       // })
       // With:
-      // SuperToast.show({
-      //   message: "Your comment has been added to the secret.",
-      //   type: "success",
-      // })
       SuperToast.show({
         message: "Your comment has been added to the secret.",
         type: "success",
@@ -89,6 +100,9 @@ export function SecretDialog({
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["secret", secret.id] })
       queryClient.invalidateQueries({ queryKey: ["secrets"] })
+
+      // Mark that a comment has been posted in this session
+      sessionStorage.setItem("has_posted_comment", "true")
     },
     onError: (error: Error) => {
       SuperToast.show({
@@ -254,6 +268,7 @@ export function SecretDialog({
               </Button>
             </div>
           </div>
+          {hasPostedComment && <SocialSharingNotice />}
         </div>
       </DialogContent>
     </Dialog>

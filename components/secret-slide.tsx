@@ -16,6 +16,11 @@ import { getUsernameFromStorage } from "@/lib/storage"
 import { getDarknessTextColor } from "@/lib/utils"
 import SecretActionsMenu from "@/components/secret-actions-menu"
 import { DarknessSlider } from "@/components/darkness-slider"
+import { SocialSharingNotice } from "@/components/social-sharing-notice"
+
+// Add these imports at the top
+import { useAppDispatch, useAppSelector } from "@/redux/hooks"
+import { setHasPostedComment } from "@/redux/features/notifications/notificationsSlice"
 
 interface SecretSlideProps {
   secret: Secret
@@ -39,6 +44,13 @@ export default function SecretSlide({
   const router = useRouter()
   const { toast } = useToast()
   const queryClient = useQueryClient()
+
+  // Remove this line:
+  // const [hasPostedComment, setHasPostedComment] = useState(false)
+
+  // Add this line after other hooks:
+  const dispatch = useAppDispatch()
+  const hasPostedComment = useAppSelector((state) => state.notifications.hasPostedComment)
 
   // Update tempRating when userRating changes
   useEffect(() => {
@@ -73,6 +85,8 @@ export default function SecretSlide({
     },
     onSuccess: () => {
       setComment("")
+      // setHasPostedComment(true)
+      dispatch(setHasPostedComment(true))
       toast({
         title: "Comment added",
         description: "Your comment has been added to the secret.",
@@ -82,6 +96,9 @@ export default function SecretSlide({
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["secret", secret.id] })
       queryClient.invalidateQueries({ queryKey: ["secrets"] })
+
+      // Mark that a comment has been posted in this session
+      sessionStorage.setItem("has_posted_comment", "true")
     },
     onError: (error: Error) => {
       toast({
@@ -216,6 +233,7 @@ export default function SecretSlide({
             </div>
           </div>
         </div>
+        {hasPostedComment && <SocialSharingNotice />}
 
         <div className="mt-4 text-center">
           <Button variant="outline" onClick={goToFullPage}>

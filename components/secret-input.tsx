@@ -15,6 +15,8 @@ import { getUsernameFromStorage, saveUsernameToStorage } from "@/lib/storage"
 import { secretsApi } from "@/lib/api-client"
 import { generateSubmissionToken } from "@/lib/submission-token"
 import { SuperToast } from "@/components/super-toast"
+import { setHasPostedComment } from "@/redux/features/notifications/notificationsSlice"
+import { SocialSharingNotice } from "@/components/social-sharing-notice"
 
 // Define SpeechRecognition and SpeechRecognitionEvent types
 declare global {
@@ -57,6 +59,7 @@ export default function SecretInput() {
     },
     onSuccess: (data) => {
       setContent("")
+      dispatch(setHasPostedComment(true))
       setIsSubmitting(false)
 
       // Reset CAPTCHA state for next submission
@@ -314,14 +317,7 @@ export default function SecretInput() {
             </div>
           </div>
         )}
-
-        {/* Social sharing notification */}
-        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md border border-blue-200 dark:border-blue-800">
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            <span className="font-medium">Note:</span> High-quality secrets may be shared anonymously on our social
-            media platforms to reach a wider audience. Your identity will never be revealed.
-          </p>
-        </div>
+        <SocialSharingNotice />
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button
