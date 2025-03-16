@@ -1,18 +1,24 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getSecretById, addComment, updateSecretInteractions, hashIp } from "@/lib/db"
+import { extractLastSegment } from "@/lib/url-utils"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+// Update the GET function to extract ID from URL
+export async function GET(request: NextRequest) {
+  let id: string
   try {
-    console.log("API route: Fetching secret with ID:", params.id)
+    // Extract the ID from the URL path
+    id = extractLastSegment(request.url)
+
+    console.log("API route: Fetching secret with ID:", id)
 
     // Add more detailed logging
     console.log("API route: About to call getSecretById")
-    const secret = await getSecretById(params.id)
+    const secret = await getSecretById(id)
     console.log("API route: DB response:", secret ? "Secret found" : "Secret not found")
 
     if (!secret) {
       console.log("API route: Secret not found")
-      return NextResponse.json({ error: "Secret not found", id: params.id }, { status: 404 })
+      return NextResponse.json({ error: "Secret not found", id: id }, { status: 404 })
     }
 
     console.log("API route: Secret found, returning data")
@@ -24,15 +30,19 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         error: "Failed to fetch secret",
         message: error instanceof Error ? error.message : "Unknown error",
         stack: error instanceof Error ? error.stack : undefined,
-        id: params.id,
+        id: id,
       },
       { status: 500 },
     )
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+// Update the POST function to extract ID from URL
+export async function POST(request: NextRequest) {
   try {
+    // Extract the ID from the URL path
+    const id = extractLastSegment(request.url)
+
     const body = await request.json()
     const { comment, username } = body
 
@@ -50,7 +60,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const ipHash = hashIp(ip)
 
     const result = await addComment({
-      secretId: params.id,
+      secretId: id,
       content: comment,
       username,
       ipHash,
@@ -64,8 +74,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+// Update the PATCH function to extract ID from URL
+export async function PATCH(request: NextRequest) {
   try {
+    // Extract the ID from the URL path
+    const id = extractLastSegment(request.url)
+
     const body = await request.json()
     const { action } = body
 
@@ -73,7 +87,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Invalid action" }, { status: 400 })
     }
 
-    const result = await updateSecretInteractions(params.id, action)
+    const result = await updateSecretInteractions(id, action)
 
     return NextResponse.json({ success: true, result })
   } catch (error) {

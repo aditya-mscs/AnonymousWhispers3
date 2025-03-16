@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server"
 import { reportSecret, hashIp } from "@/lib/db"
 import { getUsernameFromStorage } from "@/lib/storage"
+import { extractSecondToLastSegment } from "@/lib/url-utils"
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request) {
   try {
+    // Extract the ID from the URL path
+    const id = extractSecondToLastSegment(request.url)
+
+    if (!id) {
+      return NextResponse.json({ error: "Secret ID is required" }, { status: 400 })
+    }
+
     const body = await request.json()
     const { username } = body
 
@@ -16,7 +24,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     // Save the report with a default reason
     const report = await reportSecret({
-      secretId: params.id,
+      secretId: id,
       reason: "Content reported by user",
       username: reportUsername,
       ipHash,

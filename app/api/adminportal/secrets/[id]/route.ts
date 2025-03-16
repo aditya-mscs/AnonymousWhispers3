@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { checkAdminSession, deleteSecret } from "@/lib/admin"
+import { extractLastSegment } from "@/lib/url-utils"
 
 export async function DELETE(request: Request) {
   try {
@@ -9,9 +10,7 @@ export async function DELETE(request: Request) {
     }
 
     // Extract the ID from the URL path
-    const url = new URL(request.url)
-    const pathParts = url.pathname.split("/")
-    const id = pathParts[pathParts.length - 1]
+    const id = extractLastSegment(request.url)
 
     if (!id) {
       return NextResponse.json({ error: "Secret ID is required" }, { status: 400 })
