@@ -1,17 +1,28 @@
-import type { Secret, Comment } from "@/types/secret"
+export interface Secret {
+  id: string
+  content: string
+  darkness: number
+  createdAt: string
+  updatedAt: string
+  username?: string
+  submissionToken?: string
+  shares: number
+  views: number
+}
 
-// Helper function to get the base URL
-function getBaseUrl() {
-  // For server-side rendering, use environment variables or default
-  return process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+export interface Comment {
+  id: string
+  content: string
+  username: string
+  createdAt: string
+  updatedAt: string
 }
 
 // API client for secrets
 export const secretsApi = {
   // Get all secrets
   getSecrets: async (type = "recent", limit = 10, page = 1): Promise<Secret[]> => {
-    const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets?type=${type}&limit=${limit}&page=${page}`)
+    const response = await fetch(`/api/secrets?type=${type}&limit=${limit}&page=${page}`)
 
     if (!response.ok) {
       throw new Error("Failed to fetch secrets")
@@ -25,9 +36,7 @@ export const secretsApi = {
   getSecretById: async (id: string): Promise<Secret> => {
     console.log(`API Client: Fetching secret with ID: ${id}`)
 
-    // Use absolute URL to avoid parsing issues
-    const baseUrl = getBaseUrl()
-    const url = `${baseUrl}/api/secrets/${id}`
+    const url = `/api/secrets/${id}`
     console.log(`API Client: Using URL: ${url}`)
 
     const response = await fetch(url, {
@@ -52,8 +61,7 @@ export const secretsApi = {
     username?: string
     submissionToken?: string
   }): Promise<Secret> => {
-    const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets`, {
+    const response = await fetch(`/api/secrets`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -72,8 +80,7 @@ export const secretsApi = {
 
   // Add a comment to a secret
   addComment: async (secretId: string, comment: { content: string; username: string }): Promise<Comment> => {
-    const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets/${secretId}`, {
+    const response = await fetch(`/api/secrets/${secretId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -95,8 +102,7 @@ export const secretsApi = {
 
   // Update secret interactions (share, view)
   updateInteractions: async (secretId: string, action: "share" | "view"): Promise<Secret> => {
-    const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets/${secretId}`, {
+    const response = await fetch(`/api/secrets/${secretId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -117,8 +123,7 @@ export const secretsApi = {
     secretId: string,
     data: { reason: string; username: string },
   ): Promise<{ success: boolean; message: string }> => {
-    const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets/${secretId}/report`, {
+    const response = await fetch(`/api/secrets/${secretId}/report`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -136,8 +141,7 @@ export const secretsApi = {
 
   // Get all reported secrets (for admin)
   getReportedSecrets: async (): Promise<any[]> => {
-    const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/adminportal/reports`)
+    const response = await fetch(`/api/adminportal/reports`)
 
     if (!response.ok) {
       throw new Error("Failed to get reported secrets")

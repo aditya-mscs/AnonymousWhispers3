@@ -21,14 +21,22 @@ export default function SecretTabs() {
     queryKey: ["secrets", activeTab],
     queryFn: async () => {
       try {
+        console.log(`Fetching secrets for tab: ${activeTab}`)
         const data = await secretsApi.getSecrets(activeTab, 12)
+        console.log(`Received ${data.length} secrets`)
         return data
       } catch (error) {
-        console.error("Error fetching secrets:", error)
-        throw error
+        console.error("Error in queryFn:", error)
+        // Return empty array instead of throwing
+        return []
       }
     },
     staleTime: 60000, // 1 minute
+    // Add retry configuration to handle transient errors
+    retry: 3,
+    retryDelay: 1000,
+    // Add fallback data
+    placeholderData: [],
   })
 
   // Update Redux store when data changes

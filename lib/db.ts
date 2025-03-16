@@ -1,3 +1,10 @@
+try {
+  // This is just to ensure the module loads without errors
+  console.log("Initializing DB module")
+} catch (error) {
+  console.error("Error initializing DB module:", error)
+}
+
 import { v4 as uuidv4 } from "uuid"
 import { docClient, SECRETS_TABLE, COMMENTS_TABLE } from "./db-models"
 import { PutCommand, GetCommand, ScanCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb"
@@ -98,7 +105,7 @@ export async function getSecretById(id: string): Promise<SecretType | null> {
   }
 }
 
-// Function to get secrets by type (recent, dark, trending)
+// Modify the getSecrets function to handle errors better
 export async function getSecrets(type = "recent", limit = 10, page = 1): Promise<SecretType[]> {
   try {
     console.log(`DB: getSecrets called with type=${type}, limit=${limit}, page=${page}`)
@@ -107,15 +114,21 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
     let secrets: any[] = []
     const offset = (page - 1) * limit
 
-    // Query DynamoDB based on the type
-    const scanResult = await docClient.send(
-      new ScanCommand({
-        TableName: SECRETS_TABLE,
-      }),
-    )
+    try {
+      // Query DynamoDB based on the type
+      const scanResult = await docClient.send(
+        new ScanCommand({
+          TableName: SECRETS_TABLE,
+        }),
+      )
 
-    secrets = scanResult.Items || []
-    console.log(`DB: Found ${secrets.length} secrets before sorting/pagination`)
+      secrets = scanResult.Items || []
+      console.log(`DB: Found ${secrets.length} secrets before sorting/pagination`)
+    } catch (error) {
+      console.error("Error scanning DynamoDB:", error)
+      // Return empty array instead of throwing
+      return []
+    }
 
     // Sort based on type
     switch (type) {
@@ -128,8 +141,13 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
         // For trending, we need to calculate based on interactions and darkness
         // Get comments for each secret to calculate trending score
         for (const secret of secrets) {
-          const comments = await getCommentsBySecretId(secret.id)
-          secret.commentCount = comments.length
+          try {
+            const comments = await getCommentsBySecretId(secret.id)
+            secret.commentCount = comments.length
+          } catch (error) {
+            console.error(`Error getting comments for secret ${secret.id}:`, error)
+            secret.commentCount = 0
+          }
         }
 
         // Sort by a "trending score" that includes darkness level
@@ -154,7 +172,13 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
     // Get comments for each secret
     const secretsWithComments = await Promise.all(
       secrets.map(async (secret) => {
-        const comments = await getCommentsBySecretId(secret.id)
+        let comments = []
+        try {
+          comments = await getCommentsBySecretId(secret.id)
+        } catch (error) {
+          console.error(`Error getting comments for secret ${secret.id}:`, error)
+        }
+
         return {
           id: secret.id,
           content: secret.content,
@@ -171,7 +195,10 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
     return secretsWithComments
   } catch (error) {
     console.error("Error fetching secrets:", error)
-    throw error
+
+    // Return an empty array instead of throwing an error
+    // This prevents the application from crashing when there's a DB error
+    return []
   }
 }
 

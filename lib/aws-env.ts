@@ -40,9 +40,8 @@ export function getAwsEnvironment(): AwsEnvironment {
   // Get other AWS-related variables
   const ipHashSalt = env.IP_HASH_SALT || "default-salt"
 
-  // Get application URLs
-  const baseUrl =
-    env.NEXT_PUBLIC_BASE_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000")
+  // Get application URLs - avoid using window.location which might not be available
+  const baseUrl = env.NEXT_PUBLIC_BASE_URL || ""
 
   // Check if we have valid credentials
   const hasCredentials = Boolean(accessKeyId && secretAccessKey)
@@ -64,7 +63,7 @@ export function getAwsEnvironment(): AwsEnvironment {
  * Should only be used in server components or API routes
  */
 export function getAwsCredentials() {
-  const { accessKeyId, secretAccessKey, hasCredentials } = getAwsEnvironment()
+  const { accessKeyId, secretAccessKey } = getAwsEnvironment()
 
   // IMPORTANT: Always return an object with credentials, even if empty
   // This prevents the SDK from trying to load credentials from the filesystem

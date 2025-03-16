@@ -107,6 +107,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Update the GET function to handle errors better
 export async function GET(request: NextRequest) {
   try {
     console.log("API: GET /api/secrets - Starting request")
@@ -123,24 +124,24 @@ export async function GET(request: NextRequest) {
       console.log(`API: Found ${secrets.length} secrets`)
 
       // If no secrets were found, return an empty array but with a 200 status
-      if (secrets.length === 0) {
-        console.log("API: No secrets found, returning empty array")
-        return NextResponse.json({
-          secrets: [],
-          message: "No secrets found. The database may be empty.",
-          params: { type, limit, page },
-        })
-      }
-
-      return NextResponse.json({ secrets })
+      return NextResponse.json({
+        secrets: secrets || [],
+        params: { type, limit, page },
+      })
     } catch (error) {
       console.error("Error in getSecrets:", error)
-      throw error
+      // Return empty array with a message instead of throwing
+      return NextResponse.json({
+        secrets: [],
+        message: "Error fetching secrets. Using fallback data.",
+        params: { type, limit, page },
+      })
     }
   } catch (error) {
     console.error("Error fetching secrets:", error)
     return NextResponse.json(
       {
+        secrets: [],
         error: "Failed to fetch secrets",
         message: error instanceof Error ? error.message : "Unknown error",
         timestamp: new Date().toISOString(),

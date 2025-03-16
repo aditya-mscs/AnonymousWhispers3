@@ -103,7 +103,7 @@ export default function AboutPage() {
           </p>
           <ul className="list-disc pl-5 space-y-2">
             <li>All shared content is completely anonymous</li>
-            <li>We never share any identifying information except AW usernames</li>
+            <li>We never share any identifying information</li>
             <li>We only share content that meets our quality criteria</li>
             <li>We moderate all content to ensure it adheres to our community guidelines</li>
             <li>You can opt out of social sharing by contacting us</li>

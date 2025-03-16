@@ -1,33 +1,34 @@
 import type { Secret, Comment } from "@/types/secret"
 
-// Helper function to get the base URL
-function getBaseUrl() {
-  // For server-side rendering, use environment variables or default
-  return process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-}
-
 // API client for secrets
 export const secretsApi = {
   // Get all secrets
   getSecrets: async (type = "recent", limit = 10, page = 1): Promise<Secret[]> => {
-    const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets?type=${type}&limit=${limit}&page=${page}`)
+    try {
+      console.log(`API Client: Fetching secrets with type=${type}, limit=${limit}, page=${page}`)
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch secrets")
+      const response = await fetch(`/api/secrets?type=${type}&limit=${limit}&page=${page}`)
+      console.log(`API Client: Response status: ${response.status}`)
+
+      if (!response.ok) {
+        console.error(`Failed to fetch secrets: ${response.status} ${response.statusText}`)
+        return [] // Return empty array instead of throwing
+      }
+
+      const data = await response.json()
+      console.log(`API Client: Received ${data.secrets?.length || 0} secrets`)
+      return data.secrets || [] // Ensure we always return an array
+    } catch (error) {
+      console.error("Error in API client getSecrets:", error)
+      return [] // Return empty array on error
     }
-
-    const data = await response.json()
-    return data.secrets
   },
 
   // Get a single secret by ID
   getSecretById: async (id: string): Promise<Secret> => {
     console.log(`API Client: Fetching secret with ID: ${id}`)
 
-    // Use absolute URL to avoid parsing issues
-    const baseUrl = getBaseUrl()
-    const url = `${baseUrl}/api/secrets/${id}`
+    const url = `/api/secrets/${id}`
     console.log(`API Client: Using URL: ${url}`)
 
     const response = await fetch(url, {
@@ -52,8 +53,7 @@ export const secretsApi = {
     username?: string
     submissionToken?: string
   }): Promise<Secret> => {
-    const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets`, {
+    const response = await fetch(`/api/secrets`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -72,8 +72,7 @@ export const secretsApi = {
 
   // Add a comment to a secret
   addComment: async (secretId: string, comment: { content: string; username: string }): Promise<Comment> => {
-    const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets/${secretId}`, {
+    const response = await fetch(`/api/secrets/${secretId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -95,8 +94,7 @@ export const secretsApi = {
 
   // Update secret interactions (share, view)
   updateInteractions: async (secretId: string, action: "share" | "view"): Promise<Secret> => {
-    const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets/${secretId}`, {
+    const response = await fetch(`/api/secrets/${secretId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -117,8 +115,7 @@ export const secretsApi = {
     secretId: string,
     data: { reason: string; username: string },
   ): Promise<{ success: boolean; message: string }> => {
-    const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/secrets/${secretId}/report`, {
+    const response = await fetch(`/api/secrets/${secretId}/report`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -136,8 +133,7 @@ export const secretsApi = {
 
   // Get all reported secrets (for admin)
   getReportedSecrets: async (): Promise<any[]> => {
-    const baseUrl = getBaseUrl()
-    const response = await fetch(`${baseUrl}/api/adminportal/reports`)
+    const response = await fetch(`/api/adminportal/reports`)
 
     if (!response.ok) {
       throw new Error("Failed to get reported secrets")

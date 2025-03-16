@@ -1,5 +1,4 @@
 import type { Secret } from "@/types/secret"
-import { getAwsEnvironment } from "./aws-env"
 
 // Criteria for determining if a secret qualifies for social sharing
 export function qualifiesForSocialSharing(secret: Secret): boolean {
@@ -17,8 +16,8 @@ export function qualifiesForSocialSharing(secret: Secret): boolean {
 // Function to post to Twitter/X
 export async function postToTwitter(secret: Secret): Promise<boolean> {
   try {
-    const awsEnv = getAwsEnvironment()
-    const baseUrl = awsEnv.baseUrl
+    // Don't use baseUrl, use a relative path or window.location.origin if needed
+    const secretUrl = `/secret/${secret.id}`
 
     // In a real implementation, you would use the Twitter API
     // This would require proper authentication and API keys
@@ -31,7 +30,7 @@ export async function postToTwitter(secret: Secret): Promise<boolean> {
     //     'Content-Type': 'application/json'
     //   },
     //   body: JSON.stringify({
-    //     text: `"${truncateText(secret.content, 250)}" - Anonymous Darkness Rating: ${secret.darkness}/10 ${baseUrl}/secret/${secret.id}`
+    //     text: `"${truncateText(secret.content, 250)}" - Anonymous Darkness Rating: ${secret.darkness}/10 ${secretUrl}`
     //   })
     // })
 
@@ -43,11 +42,10 @@ export async function postToTwitter(secret: Secret): Promise<boolean> {
   }
 }
 
-// Function to post to Instagram
 export async function postToInstagram(secret: Secret): Promise<boolean> {
   try {
-    const awsEnv = getAwsEnvironment()
-    const baseUrl = awsEnv.baseUrl
+    // Don't use baseUrl, use a relative path or window.location.origin if needed
+    const secretUrl = `/secret/${secret.id}`
 
     // In a real implementation, you would use the Facebook Graph API for Instagram
     // This would require proper authentication and API keys
