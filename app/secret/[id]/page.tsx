@@ -2,10 +2,9 @@ import { notFound } from "next/navigation"
 import SecretDetail from "@/components/secret-detail"
 import { secretsApi } from "@/lib/api-client"
 
+// Update the interface and function to handle Promise<params>
 interface SecretPageProps {
-  params: {
-    id: string
-  }
+  params: Promise<{ id: string }> | { id: string }
 }
 
 export default async function SecretPage({ params }: SecretPageProps) {
