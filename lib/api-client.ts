@@ -28,7 +28,9 @@ export const secretsApi = {
   getSecretById: async (id: string): Promise<Secret> => {
     console.log(`API Client: Fetching secret with ID: ${id}`)
 
-    const url = `/api/secrets/${id}`
+    // Create a proper URL by using the window.location.origin as the base
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : ""
+    const url = `${baseUrl}/api/secrets/${id}`
     console.log(`API Client: Using URL: ${url}`)
 
     const response = await fetch(url, {

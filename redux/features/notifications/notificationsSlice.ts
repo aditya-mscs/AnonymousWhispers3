@@ -1,35 +1,35 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
 
 interface NotificationsState {
-  hasPostedComment: boolean
+  hasSharedSecret: boolean
 }
 
-// Initialize from sessionStorage if available
-const getInitialHasPostedComment = (): boolean => {
+// Initialize from localStorage if available
+const getInitialHasSharedSecret = (): boolean => {
   if (typeof window !== "undefined") {
-    return sessionStorage.getItem("has_posted_comment") === "true"
+    return localStorage.getItem("has_shared_secret") === "true"
   }
   return false
 }
 
 const initialState: NotificationsState = {
-  hasPostedComment: getInitialHasPostedComment(),
+  hasSharedSecret: getInitialHasSharedSecret(),
 }
 
 export const notificationsSlice = createSlice({
   name: "notifications",
   initialState,
   reducers: {
-    setHasPostedComment: (state, action: PayloadAction<boolean>) => {
-      state.hasPostedComment = action.payload
+    setHasSharedSecret: (state, action: PayloadAction<boolean>) => {
+      state.hasSharedSecret = action.payload
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("has_posted_comment", action.payload.toString())
+        localStorage.setItem("has_shared_secret", action.payload.toString())
       }
     },
   },
 })
 
-export const { setHasPostedComment } = notificationsSlice.actions
+export const { setHasSharedSecret } = notificationsSlice.actions
 
 export default notificationsSlice.reducer
 

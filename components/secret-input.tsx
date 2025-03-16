@@ -15,7 +15,8 @@ import { getUsernameFromStorage, saveUsernameToStorage } from "@/lib/storage"
 import { secretsApi } from "@/lib/api-client"
 import { generateSubmissionToken } from "@/lib/submission-token"
 import { SuperToast } from "@/components/super-toast"
-import { setHasPostedComment } from "@/redux/features/notifications/notificationsSlice"
+// Update the import to use the new action name
+import { setHasSharedSecret } from "@/redux/features/notifications/notificationsSlice"
 import { SocialSharingNotice } from "@/components/social-sharing-notice"
 
 // Define SpeechRecognition and SpeechRecognitionEvent types
@@ -59,7 +60,11 @@ export default function SecretInput() {
     },
     onSuccess: (data) => {
       setContent("")
-      dispatch(setHasPostedComment(true))
+      // In the mutation.onSuccess callback, update this line:
+      // Replace:
+      // dispatch(setHasPostedComment(true))
+      // With:
+      dispatch(setHasSharedSecret(true))
       setIsSubmitting(false)
 
       // Reset CAPTCHA state for next submission
@@ -67,7 +72,11 @@ export default function SecretInput() {
       setSliderValue([0])
 
       // Mark that the user has submitted before (for future submissions)
-      localStorage.setItem("has_submitted_secret", "true")
+      // Also update the localStorage key in the same function:
+      // Replace:
+      // localStorage.setItem("has_submitted_secret", "true")
+      // With:
+      localStorage.setItem("has_shared_secret", "true")
       setIsFirstSubmission(false)
 
       // Add to local state
@@ -115,7 +124,7 @@ export default function SecretInput() {
   // Check if this is the user's first submission
   useEffect(() => {
     // Check localStorage to see if the user has submitted before
-    const hasSubmittedBefore = localStorage.getItem("has_submitted_secret")
+    const hasSubmittedBefore = localStorage.getItem("has_shared_secret")
     if (hasSubmittedBefore === "true") {
       setIsFirstSubmission(false)
     } else {
@@ -217,7 +226,7 @@ export default function SecretInput() {
       }
 
       // Mark that the user has submitted before
-      localStorage.setItem("has_submitted_secret", "true")
+      localStorage.setItem("has_shared_secret", "true")
 
       // Submit the secret with default darkness level of 5
       mutation.mutate({

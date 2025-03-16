@@ -2,9 +2,9 @@
 import { useAppSelector } from "@/redux/hooks"
 
 export function SocialSharingNotice() {
-  const hasPostedComment = useAppSelector((state) => state.notifications.hasPostedComment)
+  const hasSharedSecret = useAppSelector((state) => state.notifications.hasSharedSecret)
 
-  if (!hasPostedComment) return null
+  if (!hasSharedSecret) return null
 
   return (
     <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md border border-blue-200 dark:border-blue-800 animate-in fade-in slide-in-from-bottom-5 duration-300">

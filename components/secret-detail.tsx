@@ -19,7 +19,6 @@ import { SocialSharingNotice } from "@/components/social-sharing-notice"
 
 // Add these imports at the top
 import { useAppDispatch, useAppSelector } from "@/redux/hooks"
-import { setHasPostedComment } from "@/redux/features/notifications/notificationsSlice"
 
 interface SecretDetailProps {
   secret: Secret
@@ -37,6 +36,7 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
   // Add this line after other hooks:
   const dispatch = useAppDispatch()
   const hasPostedComment = useAppSelector((state) => state.notifications.hasPostedComment)
+  const hasSharedSecret = useAppSelector((state) => state.notifications.hasSharedSecret)
 
   // Format the date
   const formattedDate = formatDistanceToNow(new Date(secret.createdAt), { addSuffix: true })
@@ -74,7 +74,7 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
     onSuccess: () => {
       setComment("")
       // Replace: setHasPostedComment(true)
-      dispatch(setHasPostedComment(true))
+      //dispatch(setHasPostedComment(true))
       SuperToast.show({
         message: "Your comment has been added to the secret.",
         type: "success",
@@ -215,7 +215,7 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
               {commentMutation.isPending ? "Posting..." : "Post Comment"}
             </Button>
           </div>
-          {hasPostedComment && <SocialSharingNotice />}
+          {hasSharedSecret && <SocialSharingNotice />}
 
           {sortedComments && sortedComments.length > 0 ? (
             <div className="space-y-4 mt-6">

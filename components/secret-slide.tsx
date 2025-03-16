@@ -20,7 +20,6 @@ import { SocialSharingNotice } from "@/components/social-sharing-notice"
 
 // Add these imports at the top
 import { useAppDispatch, useAppSelector } from "@/redux/hooks"
-import { setHasPostedComment } from "@/redux/features/notifications/notificationsSlice"
 
 interface SecretSlideProps {
   secret: Secret
@@ -51,6 +50,7 @@ export default function SecretSlide({
   // Add this line after other hooks:
   const dispatch = useAppDispatch()
   const hasPostedComment = useAppSelector((state) => state.notifications.hasPostedComment)
+  const hasSharedSecret = useAppSelector((state) => state.notifications.hasSharedSecret)
 
   // Update tempRating when userRating changes
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function SecretSlide({
     onSuccess: () => {
       setComment("")
       // setHasPostedComment(true)
-      dispatch(setHasPostedComment(true))
+      // dispatch(setHasPostedComment(true))
       toast({
         title: "Comment added",
         description: "Your comment has been added to the secret.",
@@ -233,7 +233,7 @@ export default function SecretSlide({
             </div>
           </div>
         </div>
-        {hasPostedComment && <SocialSharingNotice />}
+        {hasSharedSecret && <SocialSharingNotice />}
 
         <div className="mt-4 text-center">
           <Button variant="outline" onClick={goToFullPage}>

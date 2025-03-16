@@ -18,7 +18,6 @@ import { SocialSharingNotice } from "@/components/social-sharing-notice"
 
 // Add these imports at the top
 import { useAppDispatch, useAppSelector } from "@/redux/hooks"
-import { setHasPostedComment } from "@/redux/features/notifications/notificationsSlice"
 
 interface SecretDialogProps {
   secret: Secret
@@ -45,6 +44,8 @@ export function SecretDialog({
   // Add this line after other hooks:
   const dispatch = useAppDispatch()
   const hasPostedComment = useAppSelector((state) => state.notifications.hasPostedComment)
+  // Update the selector to use the new state property
+  const hasSharedSecret = useAppSelector((state) => state.notifications.hasSharedSecret)
 
   // Update tempRating when userRating changes
   useEffect(() => {
@@ -83,7 +84,9 @@ export function SecretDialog({
       // In the onSuccess callback of commentMutation, replace:
       // setHasPostedComment(true)
       // With:
-      dispatch(setHasPostedComment(true))
+      // Remove the dispatch in the commentMutation.onSuccess callback
+      // Delete this line:
+      // dispatch(setHasPostedComment(true))
       // Replace all instances of toast({...}) with SuperToast.show({...})
       // For example:
       // Replace:
@@ -268,7 +271,8 @@ export function SecretDialog({
               </Button>
             </div>
           </div>
-          {hasPostedComment && <SocialSharingNotice />}
+          {/* Update the conditional rendering of SocialSharingNotice */}
+          {hasSharedSecret && <SocialSharingNotice />}
         </div>
       </DialogContent>
     </Dialog>
