@@ -1,8 +1,7 @@
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse } from "next/server"
 import { checkAdminSession, deleteSecret } from "@/lib/admin"
 
-// Update the function signature to use the correct type for the second parameter
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
     // Check admin session
     if (!checkAdminSession()) {
