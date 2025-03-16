@@ -2,9 +2,10 @@ import { notFound } from "next/navigation"
 import SecretDetail from "@/components/secret-detail"
 import { secretsApi } from "@/lib/api-client"
 
-// Update the interface and function to handle Promise<params>
+// Update the interface to match Next.js 15's PageProps constraint
 interface SecretPageProps {
-  params: Promise<{ id: string }> | { id: string }
+  params: { id: string } | Promise<{ id: string }>
+  searchParams?: { [key: string]: string | string[] | undefined }
 }
 
 export default async function SecretPage({ params }: SecretPageProps) {
