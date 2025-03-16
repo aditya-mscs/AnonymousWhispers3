@@ -8,7 +8,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const id = params.id
+    const { id } = params; // Extract the ID from params
 
     // Delete secret
     const result = await deleteSecret(id)

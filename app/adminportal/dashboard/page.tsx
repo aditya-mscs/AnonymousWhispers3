@@ -5,6 +5,7 @@ import { StatsOverview } from "@/components/admin/stats-overview"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileText, MessageSquare, LogOut, Flag } from "lucide-react"
+import { Share2 } from "lucide-react"
 
 export default async function AdminDashboardPage() {
   // Check admin session
@@ -83,6 +84,23 @@ export default async function AdminDashboardPage() {
                   <Badge variant="destructive">{stats.reportedSecrets} pending reports</Badge>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/adminportal/social">
+          <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Share2 className="h-5 w-5 mr-2 text-primary" />
+                Social Media Publishing
+              </CardTitle>
+              <CardDescription>Approve and publish secrets to social media platforms</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Review and approve high-quality secrets for sharing on Twitter and Instagram to reach a wider audience.
+              </p>
             </CardContent>
           </Card>
         </Link>

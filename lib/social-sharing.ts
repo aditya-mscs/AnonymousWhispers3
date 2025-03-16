@@ -16,26 +16,33 @@ export function qualifiesForSocialSharing(secret: Secret): boolean {
 // Function to post to Twitter/X
 export async function postToTwitter(secret: Secret): Promise<boolean> {
   try {
-    // Don't use baseUrl, use a relative path or window.location.origin if needed
+    // Create a shareable URL for the secret
     const secretUrl = `/secret/${secret.id}`
 
     // In a real implementation, you would use the Twitter API
     // This would require proper authentication and API keys
 
     // Example of what the API call might look like:
-    // const response = await fetch('https://api.twitter.com/2/tweets', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${process.env.TWITTER_API_TOKEN}`,
-    //     'Content-Type': 'application/json'
-    //   },
-    //   body: JSON.stringify({
-    //     text: `"${truncateText(secret.content, 250)}" - Anonymous Darkness Rating: ${secret.darkness}/10 ${secretUrl}`
-    //   })
-    // })
+    if (process.env.TWITTER_API_TOKEN) {
+      // This is a simplified example - in production you would use the proper Twitter API v2 endpoints
+      const response = await fetch("https://api.twitter.com/2/tweets", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.TWITTER_API_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: `"${truncateText(secret.content, 250)}" - Anonymous Darkness Rating: ${secret.darkness}/10 ${secretUrl}`,
+        }),
+      })
 
-    console.log(`[MOCK] Posted to Twitter: "${truncateText(secret.content, 250)}" - Anonymous`)
-    return true
+      // Check if the request was successful
+      return response.ok
+    } else {
+      // Mock implementation for development/testing
+      console.log(`[MOCK] Posted to Twitter: "${truncateText(secret.content, 250)}" - Anonymous`)
+      return true
+    }
   } catch (error) {
     console.error("Error posting to Twitter:", error)
     return false
@@ -44,19 +51,36 @@ export async function postToTwitter(secret: Secret): Promise<boolean> {
 
 export async function postToInstagram(secret: Secret): Promise<boolean> {
   try {
-    // Don't use baseUrl, use a relative path or window.location.origin if needed
+    // Create a shareable URL for the secret
     const secretUrl = `/secret/${secret.id}`
 
     // In a real implementation, you would use the Facebook Graph API for Instagram
     // This would require proper authentication and API keys
 
-    // Example of what the API call might look like:
-    // const response = await fetch(`https://graph.facebook.com/v18.0/me/media?image_url=${encodeURIComponent(imageUrl)}&caption=${encodeURIComponent(caption)}&access_token=${process.env.INSTAGRAM_ACCESS_TOKEN}`, {
-    //   method: 'POST'
-    // })
+    if (process.env.INSTAGRAM_ACCESS_TOKEN) {
+      // This is a simplified example - in production you would use the proper Instagram Graph API
+      // For Instagram, you typically need to create an image first
 
-    console.log(`[MOCK] Posted to Instagram: "${truncateText(secret.content, 200)}" - Anonymous`)
-    return true
+      // 1. Generate an image with the secret text (would use a service like Cloudinary or similar)
+      const imageUrl = `https://via.placeholder.com/1080x1080.png?text=${encodeURIComponent(truncateText(secret.content, 100))}`
+
+      // 2. Post to Instagram with the image
+      const caption = `"${truncateText(secret.content, 200)}" - Anonymous Darkness Rating: ${secret.darkness}/10 #AnonymousSecrets #Confessions`
+
+      const response = await fetch(
+        `https://graph.facebook.com/v18.0/me/media?image_url=${encodeURIComponent(imageUrl)}&caption=${encodeURIComponent(caption)}&access_token=${process.env.INSTAGRAM_ACCESS_TOKEN}`,
+        {
+          method: "POST",
+        },
+      )
+
+      // Check if the request was successful
+      return response.ok
+    } else {
+      // Mock implementation for development/testing
+      console.log(`[MOCK] Posted to Instagram: "${truncateText(secret.content, 200)}" - Anonymous`)
+      return true
+    }
   } catch (error) {
     console.error("Error posting to Instagram:", error)
     return false
