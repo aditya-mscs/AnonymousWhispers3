@@ -8,7 +8,6 @@ import { formatDistanceToNow } from "date-fns"
 import { MessageSquare, Share2 } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Slider } from "@/components/ui/slider"
 import SecretSlide from "@/components/secret-slide"
 import type { Secret } from "@/types/secret"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -17,6 +16,7 @@ import { SuperToast } from "@/components/super-toast"
 import { getDarknessTextColor } from "@/lib/utils"
 import SecretActionsMenu from "@/components/secret-actions-menu"
 import { secretsApi } from "@/lib/api"
+import { DarknessSlider } from "@/components/darkness-slider"
 
 interface SecretCardProps {
   secret: Secret
@@ -134,20 +134,11 @@ export default function SecretCard({ secret }: SecretCardProps) {
           <p className="line-clamp-6 cursor-pointer hover:text-primary transition-colors">{secret.content}</p>
         </CardContent>
         <CardFooter className="pt-2 flex flex-col gap-2">
-          <div className="w-full space-y-2">
-            <div className="flex justify-between text-xs">
-              <span>Your rating: {tempRating}/10</span>
-            </div>
-            {/* Slider that updates visually while dragging but only saves when released */}
-            <Slider
+          <div className="w-full">
+            <DarknessSlider
               value={[tempRating]}
-              min={0}
-              max={10}
-              step={1}
               onValueChange={handleRatingChange} // Visual update only
               onValueCommit={handleRatingChangeEnd} // Save only when finished
-              className="w-full"
-              colorByValue={true}
             />
           </div>
           <div className="flex justify-between w-full">

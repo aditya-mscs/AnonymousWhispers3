@@ -8,13 +8,13 @@ import { Share2 } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Slider } from "@/components/ui/slider"
 import type { Secret } from "@/types/secret"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { SuperToast } from "@/components/super-toast"
 import { getUsernameFromStorage, getUserRating, saveUserRating } from "@/lib/storage"
 import { getDarknessTextColor } from "@/lib/utils"
 import SecretActionsMenu from "@/components/secret-actions-menu"
+import DarknessSlider from "@/components/darkness-slider"
 
 interface SecretDetailProps {
   secret: Secret
@@ -165,28 +165,12 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
         </CardHeader>
         <CardContent>
           <p className="text-lg whitespace-pre-wrap">{secret.content}</p>
-          <div className="mt-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Your darkness rating</span>
-              <span className="font-medium">{tempRating}/10</span>
-            </div>
-            {/* Slider that updates visually while dragging but only saves when released */}
-            <Slider
+          <div className="mt-4">
+            <DarknessSlider
               value={[tempRating]}
-              min={0}
-              max={10}
-              step={1}
               onValueChange={handleRatingChange} // Visual update only
               onValueCommit={handleRatingChangeEnd} // Save only when finished
-              className="w-full"
-              colorByValue={true}
             />
-            {/* Color bar that changes based on rating value */}
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Mild</span>
-              <span>Moderate</span>
-              <span>Severe</span>
-            </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-end gap-1">

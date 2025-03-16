@@ -8,7 +8,6 @@ import { formatDistanceToNow } from "date-fns"
 import { ExternalLink, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Slider } from "@/components/ui/slider"
 import { SlidePanel } from "@/components/slide-panel"
 import type { Secret } from "@/types/secret"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -16,6 +15,7 @@ import { useToast } from "@/hooks/use-toast"
 import { getUsernameFromStorage } from "@/lib/storage"
 import { getDarknessTextColor } from "@/lib/utils"
 import SecretActionsMenu from "@/components/secret-actions-menu"
+import { DarknessSlider } from "@/components/darkness-slider"
 
 interface SecretSlideProps {
   secret: Secret
@@ -164,19 +164,10 @@ export default function SecretSlide({
         </div>
 
         <div className="space-y-2">
-          <div className="flex justify-between text-xs">
-            <span>Your rating: {tempRating}/10</span>
-          </div>
-          {/* Slider that updates visually while dragging but only saves when released */}
-          <Slider
+          <DarknessSlider
             value={[tempRating]}
-            min={0}
-            max={10}
-            step={1}
             onValueChange={handleLocalRatingChange} // Visual update only
             onValueCommit={onRatingChangeEnd} // Save only when finished
-            className="w-full"
-            colorByValue={true}
           />
         </div>
 

@@ -11,14 +11,7 @@ const mockSecrets: Record<string, Secret> = {
     darkness: 7,
     username: "ShadowyGhost42",
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    comments: [
-      {
-        id: "c1",
-        content: "I feel the same way. It's exhausting keeping up the act.",
-        username: "VeiledWhisper99",
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ],
+    comments: [],
     views: 120,
     shares: 5,
   },

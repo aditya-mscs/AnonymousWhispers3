@@ -13,7 +13,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 // Replace useToast with SuperToast
 import { SuperToast } from "@/components/super-toast"
 import { getUsernameFromStorage } from "@/lib/storage"
-import { cn } from "@/lib/utils"
 
 interface SecretDialogProps {
   secret: Secret
@@ -206,13 +205,6 @@ export function SecretDialog({
               className="w-full"
               colorByValue={true}
             />
-            {/* Color bar that changes based on rating value */}
-            <div className={cn("h-1.5 w-full rounded-full overflow-hidden mt-1", "bg-gray-200 dark:bg-gray-700")}>
-              <div
-                className={cn("h-full transition-all duration-200", getSliderColor(tempRating))}
-                style={{ width: `${tempRating * 10}%` }}
-              />
-            </div>
           </div>
 
           <div className="space-y-2">

@@ -79,3 +79,12 @@ export function getDarknessBackgroundColor(rating: number): string {
   return "bg-slate-400 dark:bg-slate-600"
 }
 
+// Get descriptive text for darkness rating
+export function getDarknessDescription(rating: number): string {
+  if (rating === 0) return "Basic"
+  if (rating <= 3) return "Low-key"
+  if (rating <= 5) return "Vibe"
+  if (rating <= 8) return "Fire"
+  return "Slay"
+}
+
