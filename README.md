@@ -8,7 +8,7 @@
 
 <img width="1416" alt="Screenshot 2025-03-17 at 8 50 52 PM" src="https://github.com/user-attachments/assets/4b0b4a7a-237f-44ff-b190-95a13df35442" />
 
-<br /><br />
+<br />
 
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
