@@ -22,7 +22,7 @@ const COMMENTS_TABLE = process.env.COMMENTS_TABLE || "anonymous-dark-secrets-com
 // Function to save a new secret
 export async function saveSecret(secretData: Omit<Secret, "id" | "comments" | "views" | "shares">): Promise<Secret> {
   const id = uuidv4()
-  const createdAt = secretData.createdAt instanceof Date ? secretData.createdAt.toISOString() : secretData.createdAt
+  const createdAt = secretData.createdAt
 
   try {
     // Save to DynamoDB

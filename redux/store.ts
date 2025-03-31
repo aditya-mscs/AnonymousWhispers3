@@ -1,6 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit"
 import secretsReducer from "./features/secrets/secretsSlice"
-import notificationsReducer from "./features/notifications/notificationsSlice"
 
 /**
  * Redux store configuration
@@ -9,7 +8,6 @@ import notificationsReducer from "./features/notifications/notificationsSlice"
 export const store = configureStore({
   reducer: {
     secrets: secretsReducer,
-    notifications: notificationsReducer,
     // Other reducers can be added here as needed
   },
   // Enable Redux DevTools in development

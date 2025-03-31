@@ -32,7 +32,7 @@ export async function saveSecret(
           darkness: secretData.darkness,
           username: secretData.username,
           ipHash: secretData.ipHash,
-          createdAt: secretData.createdAt instanceof Date ? secretData.createdAt.toISOString() : secretData.createdAt,
+          createdAt: secretData?.createdAt,
           views: 0,
           shares: 0,
         },
@@ -45,7 +45,7 @@ export async function saveSecret(
       content: secretData.content,
       darkness: secretData.darkness,
       username: secretData.username,
-      createdAt: secretData.createdAt instanceof Date ? secretData.createdAt.toISOString() : secretData.createdAt,
+      createdAt: secretData?.createdAt,
       comments: [],
       views: 0,
       shares: 0,
@@ -175,7 +175,7 @@ export async function getSecrets(type = "recent", limit = 10, page = 1): Promise
     // Get comments for each secret
     const secretsWithComments = await Promise.all(
       secrets.map(async (secret) => {
-        let comments = []
+        let comments: any[] = []
         try {
           comments = await getCommentsBySecretId(secret.id)
         } catch (error) {

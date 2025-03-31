@@ -24,7 +24,7 @@ export interface AwsEnvironment {
  */
 export function getAwsEnvironment(): AwsEnvironment {
   // Use typeof check to ensure this works in both server and client environments
-  const env = typeof process !== "undefined" && process.env ? process.env : {}
+  const env: { [key: string]: string | undefined } = typeof process !== "undefined" && process.env ? process.env : {}
 
   // Get region - only use MY_AWS_REGION
   const region = env.MY_AWS_REGION || env.AWS_REGION || "us-east-1"
@@ -40,8 +40,9 @@ export function getAwsEnvironment(): AwsEnvironment {
   // Get other AWS-related variables
   const ipHashSalt = env.IP_HASH_SALT || "default-salt"
 
-  // Get application URLs - avoid using window.location which might not be available
-  const baseUrl = env.NEXT_PUBLIC_BASE_URL || ""
+  // Get application URLs
+  const baseUrl =
+    env.NEXT_PUBLIC_BASE_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000")
 
   // Check if we have valid credentials
   const hasCredentials = Boolean(accessKeyId && secretAccessKey)
@@ -63,7 +64,7 @@ export function getAwsEnvironment(): AwsEnvironment {
  * Should only be used in server components or API routes
  */
 export function getAwsCredentials() {
-  const { accessKeyId, secretAccessKey } = getAwsEnvironment()
+  const { accessKeyId, secretAccessKey, hasCredentials } = getAwsEnvironment()
 
   // IMPORTANT: Always return an object with credentials, even if empty
   // This prevents the SDK from trying to load credentials from the filesystem

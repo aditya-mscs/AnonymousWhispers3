@@ -14,8 +14,8 @@ const ADMIN_URL = "/adminportal" // Static URL for admin portal
 /**
  * Sets the admin session cookie
  */
-export function setAdminSession() {
-  const cookieStore = cookies()
+export async function setAdminSession() {
+  const cookieStore = await cookies()
   cookieStore.set("admin_session", "true", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -27,8 +27,8 @@ export function setAdminSession() {
 /**
  * Clears the admin session cookie
  */
-export function clearAdminSession() {
-  const cookieStore = cookies()
+export async function clearAdminSession() {
+  const cookieStore = await cookies()
   cookieStore.delete("admin_session")
 }
 
@@ -37,8 +37,8 @@ export function clearAdminSession() {
  * Checks if the admin session cookie exists
  */
 export async function checkAdminSession() {
-  const cookieStore = cookies()
-  return await cookieStore.has("admin_session")
+  const cookieStore = await cookies()
+  return cookieStore.has("admin_session")
 }
 
 // Update the requireAdmin function to handle async
@@ -46,8 +46,8 @@ export async function checkAdminSession() {
  * Middleware to require admin authentication
  * Redirects to login page if not authenticated
  */
-export async function requireAdmin() {
-  if (!(await checkAdminSession())) {
+export function requireAdmin() {
+  if (!checkAdminSession()) {
     redirect("/adminportal")
   }
 }
@@ -118,9 +118,12 @@ export async function getAdminStats() {
       const reportsResult = await docClient.send(
         new ScanCommand({
           TableName: "anonymous-dark-secrets-reports",
-          FilterExpression: "status = :status",
+          FilterExpression: "#statusAttr = :statusValue",
+          ExpressionAttributeNames: {
+            "#statusAttr": "status",
+          },
           ExpressionAttributeValues: {
-            ":status": "pending",
+            ":statusValue": "pending",
           },
           Select: "COUNT",
         }),

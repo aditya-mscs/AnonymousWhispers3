@@ -1,5 +1,5 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb"
+import { DynamoDBDocumentClient, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb"
 import { v4 as uuidv4 } from "uuid"
 import { createHash } from "crypto"
 import dotenv from "dotenv"
@@ -182,6 +182,80 @@ const mockSecrets = [
   },
 ]
 
+// Mock comments for seeding
+const mockComments = [
+  {
+    secretIndex: 0,
+    content: "I feel the same way. It's exhausting keeping up the act.",
+    username: "VeiledWhisper99",
+    ipHash: hashIp("192.168.1.8"),
+    createdAt: randomDate(2),
+  },
+  {
+    secretIndex: 2,
+    content: "I understand this completely. Sometimes the online version feels more real than my actual life.",
+    username: "HiddenSpecter456",
+    ipHash: hashIp("192.168.1.9"),
+    createdAt: randomDate(6),
+  },
+  {
+    secretIndex: 2,
+    content: "How do you keep the two lives separate? I'm always afraid of being discovered.",
+    username: "CovertRevenant789",
+    ipHash: hashIp("192.168.1.10"),
+    createdAt: randomDate(3),
+  },
+  {
+    secretIndex: 3,
+    content: "You need to stop before you get caught. It's not worth ruining your life over.",
+    username: "StealthyPuzzle321",
+    ipHash: hashIp("192.168.1.11"),
+    createdAt: randomDate(8),
+  },
+  {
+    secretIndex: 4,
+    content: "I see you. You're not alone in feeling this way. ❤️",
+    username: "ClandestineSpirit88",
+    ipHash: hashIp("192.168.1.12"),
+    createdAt: randomDate(15),
+  },
+  {
+    secretIndex: 4,
+    content: "Social media is just a highlight reel. Most of us are struggling behind the scenes.",
+    username: "SecretivePhantom44",
+    ipHash: hashIp("192.168.1.13"),
+    createdAt: randomDate(10),
+  },
+  {
+    secretIndex: 5,
+    content: "The imposter syndrome must be overwhelming. Have you considered coming clean?",
+    username: "MaskedMystery222",
+    ipHash: hashIp("192.168.1.14"),
+    createdAt: randomDate(20),
+  },
+  {
+    secretIndex: 6,
+    content: "This is absolutely terrifying. Have you considered talking to a medium or paranormal investigator?",
+    username: "ShadowyGhost42",
+    ipHash: hashIp("192.168.1.1"),
+    createdAt: randomDate(25),
+  },
+  {
+    secretIndex: 6,
+    content: "I had a similar experience as a child. These shadow beings are more common than people think.",
+    username: "EnigmaticWraith66",
+    ipHash: hashIp("192.168.1.6"),
+    createdAt: randomDate(26),
+  },
+  {
+    secretIndex: 6,
+    content: "Please update us on what happens with your daughter. This is seriously concerning.",
+    username: "CrypticShade23",
+    ipHash: hashIp("192.168.1.3"),
+    createdAt: randomDate(27),
+  },
+]
+
 // Function to seed the database with mock data
 async function seedDatabase() {
   try {
@@ -216,7 +290,51 @@ async function seedDatabase() {
       console.log(`Added secret: ${id}`)
     }
 
+    // Add comments
+    console.log(`Adding ${mockComments.length} comments to ${awsEnv.commentsTable}...`)
+
+    for (const comment of mockComments) {
+      const id = uuidv4()
+      const secretId = secretIds[comment.secretIndex]
+
+      await docClient.send(
+        new PutCommand({
+          TableName: awsEnv.commentsTable,
+          Item: {
+            id,
+            secretId,
+            content: comment.content,
+            username: comment.username,
+            ipHash: comment.ipHash,
+            createdAt: comment.createdAt,
+          },
+        }),
+      )
+
+      console.log(`Added comment: ${id} for secret: ${secretId}`)
+    }
+
     console.log("Database seeding completed successfully!")
+
+    // Verify data was added
+    console.log("Verifying data...")
+
+    // Check a few secrets
+    for (let i = 0; i < Math.min(3, secretIds.length); i++) {
+      const secretId = secretIds[i]
+      const result = await docClient.send(
+        new QueryCommand({
+          TableName: awsEnv.commentsTable,
+          IndexName: "SecretIdIndex",
+          KeyConditionExpression: "secretId = :secretId",
+          ExpressionAttributeValues: {
+            ":secretId": secretId,
+          },
+        }),
+      )
+
+      console.log(`Secret ${secretId} has ${result.Items?.length || 0} comments`)
+    }
   } catch (error) {
     console.error("Error seeding database:", error)
     throw error

@@ -1,24 +1,23 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb"
 import { getAwsEnvironment, getAwsCredentials } from "./aws-env"
+import { createMockDynamoDBClient } from "./mock-aws-client"
 
 // Get AWS environment variables
 const awsEnv = getAwsEnvironment()
 
-// Create a mock client for environments where AWS SDK isn't fully supported
-const createMockClient = () => {
-  return {
-    send: async () => {
-      console.log("Using mock DynamoDB client")
-      return { Items: [], Count: 0 }
-    },
-  }
-}
+// Determine if we're in a browser environment
+// const isBrowser = typeof window !== "undefined"
 
-// Create the client with error handling
-let docClient
-try {
-  // Create the DynamoDB client
+// Create the appropriate client based on environment
+let docClient: ReturnType<typeof DynamoDBDocumentClient.from>
+
+// if (isBrowser) {
+//   // Use mock client in browser environments
+//   console.log("Using mock DynamoDB client for browser environment")
+//   docClient = createMockDynamoDBClient()
+// } else {
+  // Use real client in server environments
   const client = new DynamoDBClient({
     region: awsEnv.region,
     credentials: getAwsCredentials(),
@@ -27,14 +26,8 @@ try {
       return { accessKeyId: awsEnv.accessKeyId, secretAccessKey: awsEnv.secretAccessKey }
     },
   })
-
-  // Create the document client
   docClient = DynamoDBDocumentClient.from(client)
-} catch (error) {
-  console.error("Error creating DynamoDB client:", error)
-  // Provide a mock client that won't throw errors
-  docClient = createMockClient()
-}
+// }
 
 // Export the document client
 export { docClient }

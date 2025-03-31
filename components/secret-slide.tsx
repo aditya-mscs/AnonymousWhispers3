@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns"
 import { ExternalLink, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Slider } from "@/components/ui/slider"
 import { SlidePanel } from "@/components/slide-panel"
 import type { Secret } from "@/types/secret"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -15,11 +16,6 @@ import { useToast } from "@/hooks/use-toast"
 import { getUsernameFromStorage } from "@/lib/storage"
 import { getDarknessTextColor } from "@/lib/utils"
 import SecretActionsMenu from "@/components/secret-actions-menu"
-import { DarknessSlider } from "@/components/darkness-slider"
-import { SocialSharingNotice } from "@/components/social-sharing-notice"
-
-// Add these imports at the top
-import { useAppDispatch, useAppSelector } from "@/redux/hooks"
 
 interface SecretSlideProps {
   secret: Secret
@@ -43,14 +39,6 @@ export default function SecretSlide({
   const router = useRouter()
   const { toast } = useToast()
   const queryClient = useQueryClient()
-
-  // Remove this line:
-  // const [hasPostedComment, setHasPostedComment] = useState(false)
-
-  // Add this line after other hooks:
-  const dispatch = useAppDispatch()
-  const hasPostedComment = useAppSelector((state) => state.notifications.hasPostedComment)
-  const hasSharedSecret = useAppSelector((state) => state.notifications.hasSharedSecret)
 
   // Update tempRating when userRating changes
   useEffect(() => {
@@ -85,8 +73,6 @@ export default function SecretSlide({
     },
     onSuccess: () => {
       setComment("")
-      // setHasPostedComment(true)
-      // dispatch(setHasPostedComment(true))
       toast({
         title: "Comment added",
         description: "Your comment has been added to the secret.",
@@ -96,9 +82,6 @@ export default function SecretSlide({
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["secret", secret.id] })
       queryClient.invalidateQueries({ queryKey: ["secrets"] })
-
-      // Mark that a comment has been posted in this session
-      sessionStorage.setItem("has_posted_comment", "true")
     },
     onError: (error: Error) => {
       toast({
@@ -181,10 +164,19 @@ export default function SecretSlide({
         </div>
 
         <div className="space-y-2">
-          <DarknessSlider
+          <div className="flex justify-between text-xs">
+            <span>Your rating: {tempRating}/10</span>
+          </div>
+          {/* Slider that updates visually while dragging but only saves when released */}
+          <Slider
             value={[tempRating]}
+            min={0}
+            max={10}
+            step={1}
             onValueChange={handleLocalRatingChange} // Visual update only
             onValueCommit={onRatingChangeEnd} // Save only when finished
+            className="w-full"
+            colorByValue={true}
           />
         </div>
 
@@ -233,7 +225,6 @@ export default function SecretSlide({
             </div>
           </div>
         </div>
-        {hasSharedSecret && <SocialSharingNotice />}
 
         <div className="mt-4 text-center">
           <Button variant="outline" onClick={goToFullPage}>

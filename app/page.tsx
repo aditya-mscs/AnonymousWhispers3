@@ -2,17 +2,20 @@ import { Suspense } from "react"
 import SecretInput from "@/components/secret-input"
 import SecretTabs from "@/components/secret-tabs"
 import { Skeleton } from "@/components/ui/skeleton"
+import { MockDataIndicator } from "@/components/mock-data-indicator"
 
 export default function Home() {
   return (
     <div className="space-y-8">
       <section className="text-center max-w-3xl mx-auto">
-        <h1 className="text-4xl font-bold mb-4">Share Your Secrets Anonymously 😉</h1>
+        <h1 className="text-4xl font-bold mb-4">Share Your secrets anonymously 😉</h1>
         <p className="text-lg text-muted-foreground">
           A safe space to anonymously share thoughts you've never told anyone. No judgment, no personal data stored.
           Just liberation through confession.
         </p>
       </section>
+
+      <MockDataIndicator />
 
       <SecretInput />
 

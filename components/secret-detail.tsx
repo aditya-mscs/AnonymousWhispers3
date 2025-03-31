@@ -8,17 +8,13 @@ import { Share2 } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Slider } from "@/components/ui/slider"
 import type { Secret } from "@/types/secret"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { SuperToast } from "@/components/super-toast"
 import { getUsernameFromStorage, getUserRating, saveUserRating } from "@/lib/storage"
 import { getDarknessTextColor } from "@/lib/utils"
 import SecretActionsMenu from "@/components/secret-actions-menu"
-import DarknessSlider from "@/components/darkness-slider"
-import { SocialSharingNotice } from "@/components/social-sharing-notice"
-
-// Add these imports at the top
-import { useAppDispatch, useAppSelector } from "@/redux/hooks"
 
 interface SecretDetailProps {
   secret: Secret
@@ -29,14 +25,6 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
   const [userRating, setUserRating] = useState(0)
   const [tempRating, setTempRating] = useState(0)
   const queryClient = useQueryClient()
-
-  // Remove this line:
-  // const [hasPostedComment, setHasPostedComment] = useState(false)
-
-  // Add this line after other hooks:
-  const dispatch = useAppDispatch()
-  const hasPostedComment = useAppSelector((state) => state.notifications.hasPostedComment)
-  const hasSharedSecret = useAppSelector((state) => state.notifications.hasSharedSecret)
 
   // Format the date
   const formattedDate = formatDistanceToNow(new Date(secret.createdAt), { addSuffix: true })
@@ -73,8 +61,6 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
     },
     onSuccess: () => {
       setComment("")
-      // Replace: setHasPostedComment(true)
-      //dispatch(setHasPostedComment(true))
       SuperToast.show({
         message: "Your comment has been added to the secret.",
         type: "success",
@@ -82,9 +68,6 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["secret", secret.id] })
-
-      // Mark that a comment has been posted in this session
-      sessionStorage.setItem("has_posted_comment", "true")
     },
     onError: (error: Error) => {
       SuperToast.show({
@@ -182,12 +165,28 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
         </CardHeader>
         <CardContent>
           <p className="text-lg whitespace-pre-wrap">{secret.content}</p>
-          <div className="mt-4">
-            <DarknessSlider
+          <div className="mt-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Your darkness rating</span>
+              <span className="font-medium">{tempRating}/10</span>
+            </div>
+            {/* Slider that updates visually while dragging but only saves when released */}
+            <Slider
               value={[tempRating]}
+              min={0}
+              max={10}
+              step={1}
               onValueChange={handleRatingChange} // Visual update only
               onValueCommit={handleRatingChangeEnd} // Save only when finished
+              className="w-full"
+              colorByValue={true}
             />
+            {/* Color bar that changes based on rating value */}
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Mild</span>
+              <span>Moderate</span>
+              <span>Severe</span>
+            </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-end gap-1">
@@ -215,7 +214,6 @@ export default function SecretDetail({ secret }: SecretDetailProps) {
               {commentMutation.isPending ? "Posting..." : "Post Comment"}
             </Button>
           </div>
-          {hasSharedSecret && <SocialSharingNotice />}
 
           {sortedComments && sortedComments.length > 0 ? (
             <div className="space-y-4 mt-6">
