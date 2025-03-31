@@ -27,11 +27,11 @@ export function getAwsEnvironment(): AwsEnvironment {
   const env: { [key: string]: string | undefined } = typeof process !== "undefined" && process.env ? process.env : {}
 
   // Get region - only use MY_AWS_REGION
-  const region = env.MY_AWS_REGION || env.AWS_REGION || "us-east-1"
+  const region = env.MY_AWS_REGION || "us-east-1"
 
   // Get credentials - only use MY_AWS_* variables
-  const accessKeyId = env.MY_AWS_ACCESS_KEY || env.AWS_ACCESS_KEY_ID || ""
-  const secretAccessKey = env.MY_AWS_SECRET_KEY || env.AWS_SECRET_ACCESS_KEY || ""
+  const accessKeyId = env.MY_AWS_ACCESS_KEY || ""
+  const secretAccessKey = env.MY_AWS_SECRET_KEY || ""
 
   // Get table names
   const secretsTable = env.SECRETS_TABLE || "anonymous-dark-secrets"

@@ -13,7 +13,7 @@ npm ci
 
 # Copy environment variables
 echo "Setting up environment variables..."
-env | grep -e AWS_REGION -e SECRETS_TABLE -e COMMENTS_TABLE -e IP_HASH_SALT >> .env.production
+env | grep -e MY_AWS_REGION -e SECRETS_TABLE -e COMMENTS_TABLE -e IP_HASH_SALT >> .env.production
 
 # Build the application
 echo "Building the application..."

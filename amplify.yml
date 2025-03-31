@@ -15,14 +15,12 @@ frontend:
         - echo "IP_HASH_SALT=$IP_HASH_SALT" >> .env.production
         - echo "NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL" >> .env.production
         - echo "ADMIN_PASSWORD=$ADMIN_PASSWORD" >> .env.production
-        # Removed ADMIN_URL environment variable
         - npm run build
   artifacts:
     baseDirectory: .next
     files:
-      - '**/*'
+      - "**/*"
   cache:
     paths:
       - node_modules/**/*
       - .next/cache/**/*
-

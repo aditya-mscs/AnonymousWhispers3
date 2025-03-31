@@ -30,6 +30,11 @@ export async function setAdminSession() {
 export async function clearAdminSession() {
   const cookieStore = await cookies()
   cookieStore.delete("admin_session")
+
+  // Clear saved admin password
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem("admin_password")
+  }
 }
 
 // Update the checkAdminSession function to be async
