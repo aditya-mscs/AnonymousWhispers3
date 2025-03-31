@@ -19,8 +19,8 @@ import { SuperToast } from "@/components/super-toast"
 // Define SpeechRecognition and SpeechRecognitionEvent types
 declare global {
   interface Window {
-    SpeechRecognition: SpeechRecognition
-    webkitSpeechRecognition: SpeechRecognition
+    SpeechRecognition: any
+    webkitSpeechRecognition: any
     SpeechRecognitionEvent: any
     SpeechRecognitionErrorEvent: any
   }
@@ -33,7 +33,7 @@ export default function SecretInput() {
   const [content, setContent] = useState("")
   const [isRecording, setIsRecording] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const recognitionRef = useRef<typeof SpeechRecognition | null>(null)
   const { toast } = useToast()
   const router = useRouter()
   const dispatch = useAppDispatch()
@@ -141,7 +141,7 @@ export default function SecretInput() {
 
         recognitionRef.current.onresult = (event: any) => {
           const transcript = Array.from(event.results)
-            .map((result) => result[0].transcript)
+            .map((result:any) => result[0].transcript)
             .join("")
           setContent((prevContent) => prevContent + transcript)
         }

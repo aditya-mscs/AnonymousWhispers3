@@ -3,7 +3,7 @@ import { checkAwsConfig } from "@/lib/aws-config"
 
 export async function GET() {
   try {
-    const config = checkAwsConfig()
+    const config:any = checkAwsConfig()
 
     return NextResponse.json({
       status: "ok",

@@ -256,9 +256,9 @@ export function SecretDialog({
               <Button
                 size="sm"
                 onClick={handleCommentSubmit}
-                disabled={comment.trim().length < 3 || commentMutation.isPending}
+                disabled={comment.trim().length < 3 || commentMutation.isLoading}
               >
-                {commentMutation.isPending ? "Posting..." : "Post Comment"}
+                {commentMutation.isLoading ? "Posting..." : "Post Comment"}
               </Button>
             </div>
           </div>

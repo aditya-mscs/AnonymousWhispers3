@@ -2,9 +2,9 @@ import { redirect } from "next/navigation"
 import { checkAdminSession, getAdminUrl } from "@/lib/admin"
 import { AdminLoginForm } from "@/components/admin/login-form"
 
-export default function AdminPage() {
+export default async function AdminPage() {
   // If already logged in, redirect to dashboard
-  if (checkAdminSession()) {
+  if (await checkAdminSession()) {
     redirect(`${getAdminUrl()}/dashboard`)
   }
 

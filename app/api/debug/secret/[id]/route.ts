@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server"
 import { directGetSecretById, checkTablesExist } from "@/lib/direct-db-access"
+import { extractLastSegment } from "@/lib/url-utils"
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request) {
   try {
     console.log("Debug API: Checking tables...")
     const tablesCheck = await checkTablesExist()
 
-    console.log("Debug API: Fetching secret with ID:", params.id)
-    const secret = await directGetSecretById(params.id)
+    const secret = await extractLastSegment(request.url)
+    console.log("Debug API: Fetching secret with ID:", secret)
 
     // Get AWS environment variables from the direct-db-access module
     const { getAwsEnvironment } = await import("@/lib/aws-env")
@@ -15,7 +16,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     return NextResponse.json({
       tablesCheck,
-      secretId: params.id,
+      secretId: secret,
       secretFound: !!secret,
       secret,
       env: {

@@ -76,7 +76,7 @@ export default function SecretSlide({
       toast({
         title: "Comment added",
         description: "Your comment has been added to the secret.",
-        variant: "success",
+        variant: "default",
       })
 
       // Invalidate queries to refresh data
@@ -125,7 +125,7 @@ export default function SecretSlide({
         toast({
           title: "Link copied",
           description: "Secret link copied to clipboard!",
-          variant: "success",
+          variant: "default",
         })
       }
     } catch (error) {
@@ -212,9 +212,9 @@ export default function SecretSlide({
             <Button
               size="sm"
               onClick={handleCommentSubmit}
-              disabled={comment.trim().length < 3 || commentMutation.isPending}
+              disabled={comment.trim().length < 3 || commentMutation.isLoading}
             >
-              {commentMutation.isPending ? "Posting..." : "Post Comment"}
+              {commentMutation.isLoading ? "Posting..." : "Post Comment"}
             </Button>
             <div className="flex items-center gap-1">
               <Button variant="outline" size="sm" onClick={handleShare}>

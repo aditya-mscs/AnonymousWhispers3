@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import SecretDetail from "@/components/secret-detail"
 import { secretsApi } from "@/lib/api-client"
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
-import { DynamoDBDocumentClient, GetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb"
+import { DynamoDBDocumentClient, GetCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb"
 import { getAwsEnvironment, getAwsCredentials } from "@/lib/aws-env"
 
 interface SecretPageProps {
@@ -61,7 +61,7 @@ async function getSecretDirectlyFromDB(id: string) {
 
     // Increment view count
     await docClient.send(
-      new GetCommand({
+      new UpdateCommand({
         TableName: awsEnv.secretsTable,
         Key: { id },
         UpdateExpression: "SET views = if_not_exists(views, :zero) + :one",
@@ -90,7 +90,7 @@ async function getSecretDirectlyFromDB(id: string) {
   }
 }
 
-export default async function SecretPage({ params }: SecretPageProps) {
+export default async function SecretPage({ params }: any) {
   try {
     // In Next.js 15, params might be a Promise, so we need to await it
     const resolvedParams = await Promise.resolve(params)

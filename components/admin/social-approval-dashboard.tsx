@@ -115,12 +115,12 @@ export function SocialApprovalDashboard({ initialSecrets }: SocialApprovalDashbo
                       <TableCell>
                         {sharedSecrets[secret.id] ? (
                           <div className="flex flex-col gap-1">
-                            <Badge variant={sharedSecrets[secret.id].twitter ? "success" : "outline"} className="w-fit">
+                            <Badge variant={sharedSecrets[secret.id].twitter ? "default" : "outline"} className="w-fit">
                               <Twitter className="h-3 w-3 mr-1" />
                               {sharedSecrets[secret.id].twitter ? "Shared" : "Not shared"}
                             </Badge>
                             <Badge
-                              variant={sharedSecrets[secret.id].instagram ? "success" : "outline"}
+                              variant={sharedSecrets[secret.id].instagram ? "default" : "outline"}
                               className="w-fit"
                             >
                               <Instagram className="h-3 w-3 mr-1" />

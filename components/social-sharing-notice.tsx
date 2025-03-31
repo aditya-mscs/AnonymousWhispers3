@@ -2,7 +2,7 @@
 import { useAppSelector } from "@/redux/hooks"
 
 export function SocialSharingNotice() {
-  const hasSharedSecret = useAppSelector((state) => state.notifications.hasSharedSecret)
+  const hasSharedSecret = useAppSelector((state) => state.secrets.hasSharedSecret)
 
   if (!hasSharedSecret) return null
 

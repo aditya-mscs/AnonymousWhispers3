@@ -46,8 +46,8 @@ export async function checkAdminSession() {
  * Middleware to require admin authentication
  * Redirects to login page if not authenticated
  */
-export function requireAdmin() {
-  if (!checkAdminSession()) {
+export async function requireAdmin() {
+  if (await !checkAdminSession()) {
     redirect("/adminportal")
   }
 }

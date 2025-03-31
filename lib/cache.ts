@@ -1,4 +1,4 @@
-const cache = new Map<string, { data: any; timestamp: number }>()
+const cache = new Map<string, { data: any; timestamp: number; ttl?: number }>()
 const DEFAULT_TTL = 60 * 1000 // 1 minute
 
 export function getFromCache<T>(key: string): T | null {

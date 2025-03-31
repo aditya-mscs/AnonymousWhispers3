@@ -1,3 +1,4 @@
+import { extractLastSegment } from "@/lib/url-utils"
 import { NextResponse } from "next/server"
 import { v4 as uuidv4 } from "uuid"
 
@@ -42,9 +43,9 @@ function generateMockSecret(id: string) {
   }
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request) {
   try {
-    const id = params.id
+    const id = extractLastSegment(request.url)
 
     // Generate a mock secret with the given ID
     const secret = generateMockSecret(id)
@@ -67,9 +68,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request) {
   try {
-    const id = params.id
+    const id = extractLastSegment(request.url)
     const body = await request.json()
     const { comment, username } = body
 

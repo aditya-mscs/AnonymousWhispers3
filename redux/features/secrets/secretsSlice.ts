@@ -2,12 +2,14 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
 import type { Secret, Comment } from "@/types/secret"
 
 interface SecretsState {
+  hasSharedSecret?: boolean
   secrets: Secret[]
   loading: boolean
   error: string | null
 }
 
 const initialState: SecretsState = {
+  hasSharedSecret: false,
   secrets: [],
   loading: false,
   error: null,

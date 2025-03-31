@@ -22,46 +22,46 @@ export async function paginatedQuery(params: QueryCommandInput, limit: number, l
 }
 
 // Helper function for efficient batch operations
-export async function batchGetSecrets(ids: string[]) {
-  // Split ids into chunks of 25 (DynamoDB batch limit)
-  const chunks = []
-  for (let i = 0; i < ids.length; i += 25) {
-    chunks.push(ids.slice(i, i + 25))
-  }
+// export async function batchGetSecrets(ids: string[]) {
+//   // Split ids into chunks of 25 (DynamoDB batch limit)
+//   const chunks = []
+//   for (let i = 0; i < ids.length; i += 25) {
+//     chunks.push(ids.slice(i, i + 25))
+//   }
 
-  // Process each chunk
-  const results = []
-  for (const chunk of chunks) {
-    const keys = chunk.map((id) => ({ id }))
-    const batchResult = await Secret.batchGet(keys)
-    if (batchResult.Responses) {
-      results.push(...batchResult.Responses)
-    }
-  }
+//   // Process each chunk
+//   const results = []
+//   for (const chunk of chunks) {
+//     const keys = chunk.map((id) => ({ id }))
+//     const batchResult = await Secret.batchGet(keys)
+//     if (batchResult.Responses) {
+//       results.push(...batchResult.Responses)
+//     }
+//   }
 
-  return results
-}
+//   return results
+// }
 
 // Helper function for conditional updates
-export async function conditionalUpdateSecret(id: string, updates: Record<string, any>, condition: string) {
-  try {
-    const result = await Secret.update(
-      {
-        id,
-        ...updates,
-      },
-      {
-        conditions: {
-          attr: condition,
-        },
-        returnValues: "ALL_NEW",
-      },
-    )
+// export async function conditionalUpdateSecret(id: string, updates: Record<string, any>, condition: string) {
+//   try {
+//     const result = await Secret.update(
+//       {
+//         id,
+//         ...updates,
+//       },
+//       {
+//         conditions: {
+//           attr: condition,
+//         },
+//         returnValues: "ALL_NEW",
+//       },
+//     )
 
-    return result.Attributes
-  } catch (error) {
-    console.error("Conditional update failed:", error)
-    return null
-  }
-}
+//     return result.Attributes
+//   } catch (error) {
+//     console.error("Conditional update failed:", error)
+//     return null
+//   }
+// }
 

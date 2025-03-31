@@ -34,7 +34,7 @@ export async function GET() {
 
     // Try to scan the secrets table
     let secretsCount = 0
-    let secretsSample = []
+    let secretsSample: any[] = []
 
     if (secretsTableExists) {
       const scanResponse = await docClient.send(

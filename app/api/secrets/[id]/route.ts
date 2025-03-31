@@ -4,7 +4,7 @@ import { extractLastSegment } from "@/lib/url-utils"
 
 // Update the GET function to extract ID from URL
 export async function GET(request: NextRequest) {
-  let id: string
+  let id: string | null = null
   try {
     // Extract the ID from the URL path
     id = extractLastSegment(request.url)

@@ -11,7 +11,7 @@ export interface Secret {
   content: string
   darkness: number
   username: string
-  createdAt: string
+  createdAt: Date | string
   comments?: Comment[]
   views?: number
   shares?: number
